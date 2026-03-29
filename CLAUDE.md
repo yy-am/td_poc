@@ -209,3 +209,12 @@ Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5173
 1. 若用户仍说页面无反馈，先看浏览器控制台和 Network
 2. 重点看 `/api/v1/sessions`、`/api/v1/sessions/{id}/messages`、`/ws/chat/{id}`
 3. 若继续优化体验，优先缩短首个 `plan` 的等待时间
+
+## 2026-03-30 文档补充
+
+- 本轮新增 `PROJECT_CODE_GUIDE.md`，用于系统化介绍当前项目结构、代码包职责、主运行流程与阅读顺序。
+- 该文档基于 `DESIGN.md`、`CODEX.md`、`CLAUDE.md` 与当前实际源码整理，明确区分了：
+  - 当前生效链路
+  - 历史/兼容文件
+  - 尚未落地的占位目录
+- 本轮没有修改运行逻辑，属于文档沉淀工作，便于后续快速理解系统设计与代码边界。

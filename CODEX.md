@@ -235,3 +235,12 @@ npm run dev
 - 必须先自证链路跑通再交付，不接受“应该好了”
 - 计划不能写死，必须是真正 agentic
 - 必须区分“已验证”和“推测”
+
+## 2026-03-30 文档补充
+
+- 本轮新增 `PROJECT_CODE_GUIDE.md`，把当前项目按根目录、后端包、前端包、脚本目录、知识目录逐层梳理了一遍。
+- 文档特别说明了当前主链路：
+  - 后端：`main.py -> router_v2.py / chat_v3.py -> orchestrator.py`
+  - 前端：`ChatView.vue -> useWebSocket.ts -> MultiAgentBoardClean.vue`
+- 文档同时标记了 legacy 文件和占位目录，避免后续助手误把旧链路当成当前实现。
+- 本轮未改动业务逻辑，只新增项目理解文档。
