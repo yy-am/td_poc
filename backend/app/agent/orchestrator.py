@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, AsyncGenerator
 
+from app.agent.understanding_agent import UnderstandingAgent
 from app.agent.planner_agent_v2 import PlannerAgent
 from app.agent.executor_agent_v2 import ExecutorAgent, ExecutionResult
 from app.agent.reviewer_agent_v2 import ReviewerAgent
@@ -15,6 +16,7 @@ from app.agent.plan_presentation import (
     plan_graph_signature,
 )
 from app.agent.runtime_context import build_runtime_context, build_runtime_status_text
+from app.agent.semantic_grounding import build_semantic_grounding
 
 
 MAX_REPLAN_ATTEMPTS = 2
@@ -81,6 +83,7 @@ class MultiAgentOrchestrator:
 
     def __init__(self, llm: Any):
         self.llm = llm
+        self.understanding = UnderstandingAgent(llm)
         self.planner = PlannerAgent(llm)
         self.executor = ExecutorAgent(llm)
         self.reviewer = ReviewerAgent(llm)
@@ -89,7 +92,26 @@ class MultiAgentOrchestrator:
     async def run(self, user_query: str) -> AsyncGenerator[AgentEvent, None]:
         """Execute the full multi-agent pipeline, yielding events."""
         step = 0
-        runtime_context = await build_runtime_context(user_query)
+        yield AgentEvent(
+            type="agent_start",
+            agent="orchestrator",
+            content="正在识别问题语义并匹配候选语义资产...",
+            step_number=step,
+        )
+        step += 1
+
+        semantic_grounding = await build_semantic_grounding(user_query)
+        understanding = await self.understanding.understand(
+            user_query,
+            self.conversation_history,
+            semantic_grounding,
+        )
+        understanding_result = understanding.to_dict()
+        runtime_context = await build_runtime_context(
+            user_query,
+            understanding_result=understanding_result,
+            semantic_grounding=semantic_grounding,
+        )
 
         # ── Phase 1: Planning ──
         yield AgentEvent(
@@ -104,11 +126,20 @@ class MultiAgentOrchestrator:
             agent="orchestrator",
             content=build_runtime_status_text(runtime_context),
             step_number=step,
-            metadata={"runtime_context": runtime_context},
+            metadata={
+                "runtime_context": runtime_context,
+                "understanding_result": understanding_result,
+                "semantic_grounding": semantic_grounding,
+            },
         )
         step += 1
 
-        plan_result = await self.planner.plan(user_query, self.conversation_history, runtime_context)
+        plan_result = await self.planner.plan(
+            user_query,
+            self.conversation_history,
+            runtime_context,
+            understanding_result=understanding_result,
+        )
         plan_graph = plan_result.graph
 
         # Yield planner reasoning
@@ -182,6 +213,7 @@ class MultiAgentOrchestrator:
                     plan_graph,
                     user_query,
                     runtime_context,
+                    understanding_result=understanding_result,
                 )
                 execution_results[node_id] = exec_result
 
@@ -288,6 +320,7 @@ class MultiAgentOrchestrator:
                             review.to_dict(),
                             {"completed_nodes": list(execution_results.keys())},
                             runtime_context,
+                            understanding_result=understanding_result,
                         )
                         plan_graph = replan_result.graph
                         replan_count += 1

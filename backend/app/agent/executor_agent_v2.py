@@ -7,7 +7,7 @@ import time
 from typing import Any
 
 from app.agent.plan_presentation import summarize_observation_metadata, summarize_tool_action
-from app.agent.prompts.executor_prompt_v2 import (
+from app.agent.prompts.executor_prompt_v3 import (
     EXECUTOR_NODE_TEMPLATE,
     EXECUTOR_REPAIR_TEMPLATE,
     EXECUTOR_SYSTEM_PROMPT,
@@ -58,6 +58,7 @@ class ExecutorAgent:
         plan_graph: dict[str, Any],
         user_query: str,
         runtime_context: dict[str, Any] | None = None,
+        understanding_result: dict[str, Any] | None = None,
     ) -> ExecutionResult:
         """Execute a single plan node and return the result."""
         node_id = node.get("id", "")
@@ -77,6 +78,8 @@ class ExecutorAgent:
             node_detail=node.get("detail", ""),
             tool_hints=", ".join(node.get("tool_hints", [])) or "自动选择",
             done_when=node.get("done_when", ""),
+            semantic_binding=self._format_semantic_binding(node.get("semantic_binding")),
+            understanding_result=self._format_understanding_result(understanding_result),
             runtime_context=self._format_runtime_context(runtime_context),
             previous_results=prev_summary or "暂无已有结果。",
         )
@@ -128,6 +131,7 @@ class ExecutorAgent:
                     node=node,
                     user_query=user_query,
                     runtime_context=runtime_context,
+                    understanding_result=understanding_result,
                     tool_name=tool_name,
                     tool_args=tool_args,
                     error_message=str(raw_result.get("error") or ""),
@@ -186,6 +190,8 @@ class ExecutorAgent:
         node_kind = str(node.get("kind") or "task")
         hints = [hint for hint in node.get("tool_hints") or [] if hint in TOOL_DEFINITION_MAP]
         query_mode = runtime_context.get("query_mode")
+        semantic_binding = node.get("semantic_binding") if isinstance(node.get("semantic_binding"), dict) else {}
+        has_semantic_binding = bool(semantic_binding.get("models"))
 
         if node_kind == "schema":
             if hints and any(name != "metadata_query" for name in hints):
@@ -196,6 +202,8 @@ class ExecutorAgent:
             allowed_names = ["knowledge_search"]
         elif node_kind == "visualization":
             allowed_names = ["chart_generator"]
+        elif has_semantic_binding:
+            allowed_names = ["semantic_query", "sql_executor", "knowledge_search"]
         elif hints:
             allowed_names = hints
         elif node_kind in {"query", "analysis"} and query_mode == "metadata":
@@ -234,6 +242,36 @@ class ExecutorAgent:
         }
         return json.dumps(compact, ensure_ascii=False, indent=2)
 
+    def _format_understanding_result(self, understanding_result: dict[str, Any] | None) -> str:
+        if not understanding_result:
+            return "暂无"
+        compact = {
+            "query_mode": understanding_result.get("query_mode"),
+            "intent_summary": understanding_result.get("intent_summary"),
+            "business_goal": understanding_result.get("business_goal"),
+            "entities": understanding_result.get("entities"),
+            "dimensions": understanding_result.get("dimensions"),
+            "metrics": understanding_result.get("metrics"),
+            "comparisons": understanding_result.get("comparisons"),
+            "candidate_models": understanding_result.get("candidate_models"),
+            "ambiguities": understanding_result.get("ambiguities"),
+            "confidence": understanding_result.get("confidence"),
+        }
+        return json.dumps(compact, ensure_ascii=False, indent=2)
+
+    def _format_semantic_binding(self, semantic_binding: Any) -> str:
+        if not isinstance(semantic_binding, dict) or not semantic_binding:
+            return "暂无"
+        compact = {
+            "models": semantic_binding.get("models", []),
+            "metrics": semantic_binding.get("metrics", []),
+            "dimensions": semantic_binding.get("dimensions", []),
+            "filters": semantic_binding.get("filters", []),
+            "grain": semantic_binding.get("grain", ""),
+            "fallback_to_sql": semantic_binding.get("fallback_to_sql", True),
+        }
+        return json.dumps(compact, ensure_ascii=False, indent=2)
+
     def _should_attempt_repair(self, raw_result: Any, tool_name: str) -> bool:
         return (
             tool_name in {"sql_executor", "semantic_query", "metadata_query"}
@@ -246,6 +284,7 @@ class ExecutorAgent:
         node: dict[str, Any],
         user_query: str,
         runtime_context: dict[str, Any],
+        understanding_result: dict[str, Any] | None,
         tool_name: str,
         tool_args: dict[str, Any],
         error_message: str,
@@ -255,6 +294,8 @@ class ExecutorAgent:
             node_title=node.get("title", ""),
             node_detail=node.get("detail", ""),
             done_when=node.get("done_when", ""),
+            semantic_binding=self._format_semantic_binding(node.get("semantic_binding")),
+            understanding_result=self._format_understanding_result(understanding_result),
             runtime_context=self._format_runtime_context(runtime_context),
             tool_name=tool_name,
             tool_args=json.dumps(tool_args, ensure_ascii=False),

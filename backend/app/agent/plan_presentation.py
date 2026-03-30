@@ -141,6 +141,7 @@ def normalize_plan_graph(raw_plan: Any, user_query: str) -> dict[str, Any]:
                 "depends_on": [],
                 "tool_hints": normalize_tool_hints(raw_node.get("tool_hints")),
                 "done_when": clean_text(str(raw_node.get("done_when") or ""), max_len=120),
+                "semantic_binding": normalize_semantic_binding(raw_node.get("semantic_binding")),
             }
         )
         valid_ids.append(node_id)
@@ -595,6 +596,35 @@ def normalize_tool_hints(value: Any) -> list[str]:
         if hint:
             hints.append(hint)
     return hints
+
+
+def normalize_semantic_binding(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+
+    models = [clean_text(str(item), max_len=60) for item in value.get("models", []) if str(item or "").strip()]
+    metrics = [clean_text(str(item), max_len=60) for item in value.get("metrics", []) if str(item or "").strip()]
+    dimensions = [clean_text(str(item), max_len=60) for item in value.get("dimensions", []) if str(item or "").strip()]
+
+    filters: list[dict[str, Any]] = []
+    for item in value.get("filters", []) or []:
+        if not isinstance(item, dict):
+            continue
+        field = clean_text(str(item.get("field") or ""), max_len=60)
+        op = clean_text(str(item.get("op") or ""), max_len=24)
+        if not field or not op:
+            continue
+        filters.append({"field": field, "op": op, "value": item.get("value")})
+
+    grain = clean_text(str(value.get("grain") or ""), max_len=24)
+    return {
+        "models": models[:4],
+        "metrics": metrics[:8],
+        "dimensions": dimensions[:8],
+        "filters": filters[:8],
+        "grain": grain,
+        "fallback_to_sql": bool(value.get("fallback_to_sql", True)),
+    }
 
 
 def clean_text(text: str, max_len: int = 120) -> str:

@@ -159,6 +159,204 @@ models:
 
 ---
 
+## 2026-03-30 设计升级：大模型智能理解层 + 语义模型中心化
+
+### 背景与问题
+- 当前 `runtime_context.py` 主要依赖关键词匹配、正则提取和数据库元数据探测来识别问题类型、期间和候选资产。
+- 这种方式适合简单 metadata / fact query，但对真实业务里的口语化问法、复杂对比链路、多实体约束和跨口径分析不够稳定。
+- 当前 Agent 虽然已经接入 `semantic_query`，但语义模型更多只是 Executor 的可选工具，而不是 Planner 与 Executor 的共同业务契约。
+- 在复杂税账对账、差异诊断、风险归因等场景下，如果缺少“语义模型作为中心锚点”的理解与规划机制，准确率和可解释性都难以稳定。
+
+### 升级目标
+1. 将当前规则型 `runtime_context` 升级为“LLM 理解 + 语义 grounding + 规则校验”的混合智能理解层。
+2. 让语义模型从“可选查询工具”升级为“规划与执行的主锚点”。
+3. 让 Planner 规划的是“业务语义任务”，而不只是“去某张表查字段”。
+4. 让 Executor 默认走 `semantic_query`，仅在语义模型无法表达、需要明细穿透或做事实校验时回退到 `sql_executor`。
+5. 保留 Reviewer 的质量把关和 replan 机制，但把审查重点扩展到“语义口径是否一致、证据是否完整”。
+
+### 升级后的目标链路
+
+```
+用户问题
+  → Semantic Asset Retrieval（召回候选语义模型/指标/维度/实体锚点）
+  → Understanding Agent（大模型生成结构化业务理解）
+  → Grounding Validator（校验理解结果能否落到真实语义资产）
+  → Semantic-aware Planner（生成带 semantic_binding 的 plan_graph）
+  → Semantic-first Executor（优先 semantic_query，必要时 SQL 补充/验证）
+  → Reviewer（审查节点结果与最终结论）
+```
+
+### 新的职责边界
+
+#### 1. Semantic Asset Retrieval
+- 输入：用户问题、对话历史
+- 输出：候选语义模型、候选指标、候选维度、可用实体解析键、时间字段与粒度、候选 source_table
+- 说明：这一层不负责“理解问题”，只负责先把语义资产召回出来，避免 LLM 裸猜全库结构。
+
+#### 2. Understanding Agent
+- 输入：用户问题、对话历史、候选语义资产
+- 输出：结构化 `understanding_result`
+- 说明：这一层负责把自然语言问题理解成业务意图，而不是直接生成 plan。
+
+#### 3. Grounding Validator
+- 输入：`understanding_result`、语义模型目录、物理表 schema
+- 输出：可执行的 grounding 结果、风险提示、必要的补充约束
+- 说明：这一层校验“理解结果是否真的能落到已有语义资产上”，避免 Planner 按空想语义规划。
+
+#### 4. Semantic-aware Planner
+- 输入：用户问题、对话历史、`understanding_result`、grounding 结果
+- 输出：带 `semantic_binding` 的 `plan_graph`
+- 说明：Planner 默认围绕业务指标、维度、实体和对比关系来规划，而不是优先围绕物理表规划。
+
+#### 5. Semantic-first Executor
+- 输入：当前 plan node、`semantic_binding`、历史执行结果、grounding 结果
+- 输出：真实工具调用结果
+- 说明：优先 `semantic_query`，`sql_executor` 主要用于语义模型缺失、明细穿透、交叉核验和异常修复。
+
+#### 6. Reviewer
+- 输入：用户原始问题、当前节点结果、全局执行上下文
+- 输出：节点 verdict + 最终报告
+- 说明：除现有完整性/合理性审查外，还应审查语义口径一致性、对比对象是否完整、证据链是否闭环。
+
+### UnderstandingResult 契约
+
+`Understanding Agent` 的目标产物不是自由文本，而是结构化对象。建议采用如下契约：
+
+```json
+{
+  "query_mode": "metadata|fact_query|analysis|reconciliation|diagnosis",
+  "intent_summary": "一句话描述用户真实业务目标",
+  "business_goal": "要解释/比较/核验的业务对象",
+  "entities": {
+    "enterprise_name": ["华兴科技"],
+    "taxpayer_id": [],
+    "tax_types": ["增值税"],
+    "periods": ["2024-07", "2024-08", "2024-09"]
+  },
+  "dimensions": ["enterprise_name", "period"],
+  "metrics": ["vat_declared_revenue", "acct_book_revenue", "vat_vs_acct_diff"],
+  "comparisons": [
+    {
+      "left": "申报收入",
+      "right": "账面收入",
+      "operator": "diff"
+    }
+  ],
+  "required_evidence": [
+    "申报口径收入",
+    "账面口径收入",
+    "差异金额",
+    "差异原因或桥接项"
+  ],
+  "candidate_models": ["reconciliation_dashboard", "vat_declaration"],
+  "ambiguities": [],
+  "confidence": "high"
+}
+```
+
+### 语义模型升级方向
+
+当前 `sys_semantic_model` + YAML 定义主要覆盖：
+- 模型名、标签、描述
+- source_table
+- dimensions / metrics
+
+这只能支持“查询”，不足以支撑“理解 + 规划”。升级后，语义模型需要额外承载：
+- 指标别名、业务同义词
+- 维度别名、常见问法
+- 默认时间字段、默认粒度、可支持粒度
+- 实体解析锚点，如 `enterprise_name -> taxpayer_id`
+- 常见分析模式，如“对账”“差异归因”“趋势”
+- 推荐可视化类型
+- 口径说明、适用边界、约束条件
+- 需要补充事实校验的场景
+
+建议优先把这些元信息先扩展进 YAML，而不是第一阶段就扩 DB 字段：
+
+```yaml
+name: reconciliation_dashboard
+label: 收入对账分析看板
+table: recon_revenue_comparison
+description: 用于税务申报收入与账面收入对比分析
+business_terms:
+  - 收入对账
+  - 税账差异
+  - 申报收入
+  - 账面收入
+intent_aliases:
+  - 比较申报收入和账面收入
+  - 分析收入差异
+entities:
+  enterprise:
+    id_field: taxpayer_id
+    name_field: enterprise_name
+time:
+  default_field: period
+  supported_grains: [month, quarter]
+analysis_patterns:
+  - compare
+  - reconciliation
+  - diagnosis
+dimensions:
+  - name: taxpayer_id
+    label: 纳税人识别号
+    column: taxpayer_id
+metrics:
+  - name: vat_declared_revenue
+    label: 增值税申报收入
+    column: vat_declared_revenue
+    agg: sum
+```
+
+### Plan 节点升级方向：引入 semantic_binding
+
+为让语义模型真正进入 Planner 与 Executor 的契约层，`plan_graph.nodes[]` 建议新增可选字段 `semantic_binding`：
+
+```json
+{
+  "id": "n2",
+  "title": "查询 Q3 申报收入与账面收入",
+  "kind": "query",
+  "tool_hints": ["semantic_query", "sql_executor"],
+  "semantic_binding": {
+    "models": ["reconciliation_dashboard"],
+    "metrics": ["vat_declared_revenue", "acct_book_revenue", "vat_vs_acct_diff"],
+    "dimensions": ["period", "enterprise_name"],
+    "filters": [
+      {"field": "taxpayer_id", "op": "=", "value": "xxx"},
+      {"field": "period", "op": "in", "value": ["2024-07", "2024-08", "2024-09"]}
+    ],
+    "grain": "month",
+    "fallback_to_sql": true
+  }
+}
+```
+
+该字段的作用：
+- Planner 显式声明本节点绑定的业务语义
+- Executor 不再只依赖自然语言节点标题猜工具
+- Reviewer 可以基于语义绑定检查“口径是否一致”
+
+### 第一阶段落地边界
+
+为控制改造风险，第一阶段先做“骨架到位、接口成形、默认兼容”：
+
+1. 新增 `understanding_agent.py` 与对应 prompt
+2. 在 `orchestrator.py` 中接入 `Understanding Agent`
+3. 将 `runtime_context.py` 升级为“grounding + validator”，可消费 `understanding_result`
+4. 扩展 Planner 输入，让其接收 `understanding_result`
+5. 扩展 `plan_graph` 节点结构，保留 `semantic_binding`
+6. 扩展 Executor 输入，让其能消费 `semantic_binding`
+7. 保留原有规则提取作为 fallback，不在第一阶段删除
+
+### 非第一阶段目标
+- 暂不在第一阶段修改前端交互形态
+- 暂不强制改造全部已有语义模型定义
+- 暂不引入新的数据库字段迁移
+- 暂不把 `sql_executor` 完全降级为禁用，只调整优先级与使用边界
+
+---
+
 ## Agent 决策流程
 
 ### 当前架构：Planner + Executor + Reviewer 三智能体协作（2026-03-29 升级）

@@ -8,7 +8,7 @@ from typing import Any
 
 from app.agent.plan_presentation import build_fallback_plan_graph, normalize_plan_graph
 from app.agent.planner import append_planner_debug_log, parse_plan_json, trim_conversation_history
-from app.agent.prompts.planner_prompt_v2 import PLANNER_SYSTEM_PROMPT, REPLAN_SYSTEM_PROMPT
+from app.agent.prompts.planner_prompt_v3 import PLANNER_SYSTEM_PROMPT, REPLAN_SYSTEM_PROMPT
 from app.agent.runtime_context import build_runtime_context, validate_plan_graph
 
 
@@ -34,6 +34,7 @@ class PlannerAgent:
         user_query: str,
         conversation_history: list[dict[str, Any]],
         runtime_context: dict[str, Any] | None = None,
+        understanding_result: dict[str, Any] | None = None,
     ) -> PlanResult:
         """Generate the initial execution plan."""
         runtime_context = runtime_context or await build_runtime_context(user_query)
@@ -41,6 +42,7 @@ class PlannerAgent:
             "user_query": user_query,
             "conversation_history": trim_conversation_history(conversation_history),
             "runtime_context": runtime_context,
+            "understanding_result": understanding_result or runtime_context.get("understanding_result") or {},
         }
 
         raw_content = ""
@@ -72,6 +74,7 @@ class PlannerAgent:
         review_feedback: dict[str, Any],
         execution_context: dict[str, Any] | None = None,
         runtime_context: dict[str, Any] | None = None,
+        understanding_result: dict[str, Any] | None = None,
     ) -> PlanResult:
         """Revise the plan based on Reviewer feedback."""
         runtime_context = runtime_context or await build_runtime_context(user_query)
@@ -81,6 +84,7 @@ class PlannerAgent:
             "review_feedback": review_feedback,
             "execution_context": execution_context or {},
             "runtime_context": runtime_context,
+            "understanding_result": understanding_result or runtime_context.get("understanding_result") or {},
         }
 
         raw_content = ""

@@ -41,7 +41,7 @@
 | `config.py` | `Settings`、`.env` 读取、数据库/LLM配置 | 集中管理运行配置 |
 | `database.py` | `engine`、`AsyncSessionLocal`、`get_db()` | 管理异步数据库连接与会话 |
 | `api/` | REST API 与 WebSocket 入口 | 对外暴露系统能力 |
-| `agent/` | 多智能体编排与老版 Agent 代码 | 当前问数主链路的核心 |
+| `agent/` | 多智能体编排与当前运行链路 | 当前问数主链路的核心 |
 | `llm/` | `client.py` | 统一 OpenAI 协议客户端 |
 | `mcp/tools/` | 工具注册与工具实现 | 给 Agent 调用的数据库/语义/知识工具 |
 | `mock/` | Mock 数据与语义定义种子 | 初始化演示数据 |
@@ -67,14 +67,10 @@
 | `mock_data_v2.py` | 清空并重建 Mock 数据，同时补种语义 YAML |
 | `health.py` | 健康检查与数据库方言确认 |
 
-### 历史/兼容文件
+### 清理说明
 
-| 文件 | 说明 |
-| --- | --- |
-| `router.py` | 老版 REST 聚合器，当前不是 `main.py` 注册对象 |
-| `semantic.py` | 老版语义 API，已被 `semantic_v2.py` 替代 |
-| `mock_data.py` | 老版 Mock API，已被 `mock_data_v2.py` 替代 |
-| `chat.py` / `chat_v2.py` / `chat_ws.py` | 旧聊天链路保留，用于参考或回退，不是当前主路径 |
+- 2026-03-30 已清理 `router.py`、`semantic.py`、`mock_data.py`、`chat.py`、`chat_v2.py`、`chat_ws.py` 等历史 API 文件。
+- 当前 `backend/app/api/` 目录只保留正在被主链路使用的实现。
 
 ## 3.3 `backend/app/agent/`
 
@@ -99,16 +95,11 @@
 | 文件 | 作用 |
 | --- | --- |
 | `planner.py` | 计划 JSON 解析、历史裁剪、planner debug log 记录等底层工具 |
-| `presentation.py` | 旧版计划/执行过程语义化展示辅助函数，保留作历史参考 |
-| `prompts.py` | 较老的 prompt 聚合方式，当前主链路已基本迁移到 `prompts/` 子目录 |
 
-### 历史链路文件
+### 清理说明
 
-| 文件 | 说明 |
-| --- | --- |
-| `planner_agent.py` / `executor_agent.py` / `reviewer_agent.py` | 第一代三智能体版本，现主要作历史参考 |
-| `react_agent.py` / `react_agent_v2.py` / `react_agent_v3.py` / `react_agent_v4.py` | 单 Agent ReAct 不同时期实现，当前不在主路径 |
-| `system_prompt.py` / `system_prompt_v2.py` / `system_prompt_v3.py` | 旧版系统提示词文件，现仍保留 |
+- 2026-03-30 已清理第一代三智能体文件、单 Agent/ReAct 链路文件以及对应旧 prompt / system prompt。
+- 当前 `backend/app/agent/` 目录以 `orchestrator.py + runtime_context.py + *_v2.py + prompts/*_v2.py` 为准。
 
 ### 当前问数链路的关键设计
 
@@ -126,7 +117,6 @@
 | --- | --- |
 | `registry_v2.py` | 当前工具注册表。定义 `sql_executor`、`metadata_query`、`semantic_query`、`chart_generator`、`knowledge_search` 的 schema 与实现映射 |
 | `sql_executor.py` | 工具实现集合，包含 SQL 执行、图表生成、知识检索的默认实现 |
-| `registry.py` | 老版工具注册表 |
 
 当前工具能力可以简化理解为：
 
@@ -144,7 +134,6 @@
 | --- | --- |
 | `service_v2.py` | 当前语义查询服务，从 `sys_semantic_model` 读取 YAML，编译后执行 SQL |
 | `compiler.py` | 语义编译器，负责验证定义、解析维度/指标/过滤/排序并拼出 SQL |
-| `service.py` | 老版本语义服务 |
 | `definitions/` | 预留的定义目录，目前基本为空，当前定义主要存在数据库表 `sys_semantic_model.yaml_definition` 中 |
 
 要点：
@@ -232,8 +221,6 @@
 | `SemanticView_v2.vue` | 当前主页面 | 语义模型浏览与语义查询测试 |
 | `DashboardView.vue` | 当前主页面 | 数据表总览、行数统计、表结构预览 |
 | `SettingsView.vue` | 当前主页面 | 模型配置表单展示、Mock 数据重建入口 |
-| `ChatView_v2.vue` | 历史页面 | 旧版聊天页面，当前 router 不走它 |
-| `SemanticView.vue` | 历史页面 | 旧版语义页面，当前 router 不走它 |
 
 ## 4.4 `frontend/src/components/chat/`
 
@@ -248,14 +235,10 @@
 | `PlanDAGViewClean.vue` | 展示 Planner 生成的真实计划图和节点状态 |
 | `AgentDetailPanelClean.vue` | 展示当前选中事件的内容、SQL、表格、图表、审查结果与证据 |
 
-### 历史/实验组件
+### 清理说明
 
-| 文件 | 说明 |
-| --- | --- |
-| `MultiAgentBoard.vue` / `AgentTimeline.vue` / `PlanDAGView.vue` / `AgentDetailPanel.vue` | 旧版多智能体面板实现，clean 版是当前实际使用链路 |
-| `ReActGraphBoard.vue` / `ReActGraphPanel.vue` | 更早期单 Agent/ReAct 可视化组件 |
-| `ThinkingProcess.vue` / `ThinkingProcessPanel.vue` | 旧版思考过程展示组件 |
-| `AgentPlanGraphBoard.vue` | 中间形态组件，主要作历史参考 |
+- 2026-03-30 已清理旧版多智能体组件、ReAct 图谱组件、ThinkingProcess 组件和 `AgentPlanGraphBoard.vue`。
+- 当前聊天展示组件只保留 clean 链路，避免后续误引用历史版本。
 
 ## 4.5 其它前端目录
 
@@ -488,14 +471,10 @@ flowchart LR
 - 前端聊天页：`frontend/src/views/ChatView.vue`
 - 前端展示组件：`frontend/src/components/chat/*Clean.vue`
 
-## 8.2 保留但不在主链路上的代码
+## 8.2 已完成的清理
 
-- `chat.py`、`chat_v2.py`、`react_agent_v*`
-- `router.py`、`semantic.py`、`mock_data.py`
-- `ChatView_v2.vue`
-- 非 clean 版本的聊天组件
-
-这些文件不是垃圾代码，但它们更像“历史实现/过渡版本/回退参考”。
+- 2026-03-30 已删除主链路外的 API、Agent、Prompt、前端页面和聊天组件重复版本。
+- 当前仓库默认只保留正在使用的版本，避免下一次阅读时被历史链路干扰。
 
 ## 8.3 还没真正落地的部分
 

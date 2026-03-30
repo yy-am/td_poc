@@ -13,7 +13,7 @@
 
 ### 运行链路
 - **当前生效的聊天链路**：`backend/app/main.py → chat_v3.py → orchestrator.py`（Planner + Executor + Reviewer 三智能体协作）
-- **旧链路**：`chat.py → react_agent_v4.py` 仍保留但不再被 main.py 注册
+- **旧链路状态**：历史 `chat.py / react_agent* / 非 clean 前端组件` 已于 2026-03-30 清理出仓库，不再保留重复实现
 - 数据库：PostgreSQL 16
 - 主后端地址：`http://127.0.0.1:8000`
 - 前端地址：`http://127.0.0.1:5173`
@@ -111,7 +111,6 @@ Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5173
 - 作用：固定“先恢复上下文，再写代码，关键方案变化回写设计文档，结束前回写交接”的工作习惯
 
 ## 额外说明
-- 旧版乱码文档已备份为 `CLAUDE.legacy.md`
 - 8003 / 8004 端口可能还留有临时联调实例，正式链路以 8000 为准
 - 敏感配置不要写进本文件，统一以 `.env` 为准
 ## 2026-03-30 最新交接摘要
@@ -218,3 +217,25 @@ Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5173
   - 历史/兼容文件
   - 尚未落地的占位目录
 - 本轮没有修改运行逻辑，属于文档沉淀工作，便于后续快速理解系统设计与代码边界。
+
+## 2026-03-30 冗余文件清理补充
+
+### 本轮完成
+- 清理主链路之外的历史源码：
+  - 后端 API：`chat.py`、`chat_v2.py`、`chat_ws.py`、`router.py`、`semantic.py`、`mock_data.py`
+  - 后端 Agent：第一代三智能体、`react_agent*`、旧 `system_prompt*`、旧 prompt 文件、旧 `registry.py`、旧 `semantic/service.py`
+  - 前端：`ChatView_v2.vue`、`SemanticView.vue`、非 clean 聊天组件
+- 清理本地运行残留：多数历史日志、测试 SQLite、legacy 交接文档、`backend/app/**/__pycache__`
+- 更新 `PROJECT_CODE_GUIDE.md`，把旧的“历史文件仍保留”描述改成当前真实仓库状态
+
+### 本轮已验证
+- 当前真实主链路仍是：
+  - 后端：`main.py -> router_v2.py / chat_v3.py -> orchestrator.py`
+  - 前端：`ChatView.vue -> useWebSocket.ts -> MultiAgentBoardClean.vue`
+- 当前 `.env` 指向 PostgreSQL；被删除的 `.db` 文件属于本地测试/调试残留，不是现行数据库
+- `frontend` 目录下重新执行 `npm run build` 成功
+- 用新的 Python 进程重新导入 `app.main`、`router_v2`、`chat_v3`、`orchestrator` 与 `*_agent_v2` 成功
+- 本地 `GET /api/v1/health` 与 `GET /api/v1/datasource/tables` 均返回 `200`
+
+### 尚未处理完
+- `backend-server-8000.log` 与 `frontend-server.log` 正被运行中的进程占用，暂未删除；不影响本轮代码清理

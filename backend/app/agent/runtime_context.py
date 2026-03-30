@@ -266,84 +266,157 @@ def _score_asset_text(query_keywords: list[str], asset_text: str, query_mode: st
     return score, matched
 
 
-async def build_runtime_context(user_query: str) -> dict[str, Any]:
-    mode_info = classify_query_mode(user_query)
-    period_hints = extract_period_hints(user_query)
+def _merge_string_lists(primary: list[str], secondary: list[str]) -> list[str]:
+    merged: list[str] = []
+    for item in primary + secondary:
+        text = str(item or "").strip()
+        if text and text not in merged:
+            merged.append(text)
+    return merged
+
+
+def _merge_period_hints(
+    inferred_hints: dict[str, Any],
+    understanding_result: dict[str, Any] | None,
+) -> dict[str, Any]:
+    hints = {
+        "year": inferred_hints.get("year"),
+        "quarter": inferred_hints.get("quarter"),
+        "periods": list(inferred_hints.get("periods") or []),
+    }
+    understanding_entities = ((understanding_result or {}).get("entities") or {})
+    for period in understanding_entities.get("periods", []) or []:
+        text = str(period or "").strip()
+        if text and text not in hints["periods"]:
+            hints["periods"].append(text)
+    return hints
+
+
+async def build_runtime_context(
+    user_query: str,
+    understanding_result: dict[str, Any] | None = None,
+    semantic_grounding: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    heuristic_mode = classify_query_mode(user_query)
+    mode_info = {
+        "query_mode": str((understanding_result or {}).get("query_mode") or heuristic_mode["query_mode"]),
+        "confidence": str((understanding_result or {}).get("confidence") or heuristic_mode["confidence"]),
+        "matched_keywords": heuristic_mode["matched_keywords"],
+    }
+    period_hints = _merge_period_hints(extract_period_hints(user_query), understanding_result)
     query_keywords = _collect_query_keywords(user_query)
-    company_fragments = extract_company_fragments(user_query)
-
-    async with AsyncSessionLocal() as db:
-        model_result = await db.execute(
-            select(
-                SysSemanticModel.name,
-                SysSemanticModel.label,
-                SysSemanticModel.description,
-                SysSemanticModel.source_table,
-                SysSemanticModel.yaml_definition,
-                SysSemanticModel.status,
-            ).where(SysSemanticModel.status == "active")
+    if understanding_result:
+        query_keywords = _merge_string_lists(
+            query_keywords,
+            _merge_string_lists(
+                understanding_result.get("metrics", []) or [],
+                understanding_result.get("dimensions", []) or [],
+            ),
         )
-        models: list[dict[str, Any]] = []
-        for name, label, description, source_table, yaml_definition, status in model_result.all():
-            asset_text = " ".join(filter(None, [name, label, description, source_table]))
-            score, matched = _score_asset_text(query_keywords, asset_text, mode_info["query_mode"])
-            models.append(
-                {
-                    "name": name,
-                    "label": label,
-                    "description": description or "",
-                    "source_table": source_table,
-                    "status": status,
-                    "has_yaml_definition": bool((yaml_definition or "").strip()),
-                    "recommended_tool": "semantic_query" if (yaml_definition or "").strip() else "sql_executor",
-                    "score": score,
-                    "matched_keywords": matched,
-                }
+    company_fragments = extract_company_fragments(user_query)
+    if understanding_result:
+        company_fragments = _merge_string_lists(
+            company_fragments,
+            ((understanding_result.get("entities") or {}).get("enterprise_names") or []),
+        )[:5]
+
+    if semantic_grounding is None:
+        async with AsyncSessionLocal() as db:
+            model_result = await db.execute(
+                select(
+                    SysSemanticModel.name,
+                    SysSemanticModel.label,
+                    SysSemanticModel.description,
+                    SysSemanticModel.source_table,
+                    SysSemanticModel.yaml_definition,
+                    SysSemanticModel.status,
+                ).where(SysSemanticModel.status == "active")
             )
+            models: list[dict[str, Any]] = []
+            for name, label, description, source_table, yaml_definition, status in model_result.all():
+                asset_text = " ".join(filter(None, [name, label, description, source_table]))
+                score, matched = _score_asset_text(query_keywords, asset_text, mode_info["query_mode"])
+                models.append(
+                    {
+                        "name": name,
+                        "label": label,
+                        "description": description or "",
+                        "source_table": source_table,
+                        "status": status,
+                        "has_yaml_definition": bool((yaml_definition or "").strip()),
+                        "recommended_tool": "semantic_query" if (yaml_definition or "").strip() else "sql_executor",
+                        "score": score,
+                        "matched_keywords": matched,
+                        "business_terms": [],
+                        "dimensions": [],
+                        "metrics": [],
+                        "analysis_patterns": [],
+                    }
+                )
 
-        conn = await db.connection()
-        table_names = await conn.run_sync(lambda sync_conn: sorted(inspect(sync_conn).get_table_names()))
+            conn = await db.connection()
+            table_names = await conn.run_sync(lambda sync_conn: sorted(inspect(sync_conn).get_table_names()))
 
-        enterprise_candidates: list[dict[str, str]] = []
-        for fragment in company_fragments:
-            enterprise_result = await db.execute(
-                select(EnterpriseInfo.enterprise_name, EnterpriseInfo.taxpayer_id)
-                .where(EnterpriseInfo.enterprise_name.like(f"{fragment}%"))
-                .limit(5)
-            )
-            for enterprise_name, taxpayer_id in enterprise_result.all():
-                item = {"enterprise_name": enterprise_name, "taxpayer_id": taxpayer_id}
-                if item not in enterprise_candidates:
-                    enterprise_candidates.append(item)
+            enterprise_candidates: list[dict[str, str]] = []
+            for fragment in company_fragments:
+                enterprise_result = await db.execute(
+                    select(EnterpriseInfo.enterprise_name, EnterpriseInfo.taxpayer_id)
+                    .where(EnterpriseInfo.enterprise_name.like(f"{fragment}%"))
+                    .limit(5)
+                )
+                for enterprise_name, taxpayer_id in enterprise_result.all():
+                    item = {"enterprise_name": enterprise_name, "taxpayer_id": taxpayer_id}
+                    if item not in enterprise_candidates:
+                        enterprise_candidates.append(item)
 
-    models.sort(key=lambda item: (-item["score"], item["name"]))
-    relevant_models = [item for item in models if item["score"] > 0][:5]
-    if not relevant_models:
-        relevant_models = models[:3]
+        models.sort(key=lambda item: (-item["score"], item["name"]))
+        relevant_models = [item for item in models if item["score"] > 0][:5]
+        if not relevant_models:
+            relevant_models = models[:3]
 
-    relevant_table_names: list[str] = []
-    for model in relevant_models:
-        table_name = model["source_table"]
-        if table_name and table_name not in relevant_table_names:
-            relevant_table_names.append(table_name)
+        relevant_table_names: list[str] = []
+        for model in relevant_models:
+            table_name = model["source_table"]
+            if table_name and table_name not in relevant_table_names:
+                relevant_table_names.append(table_name)
 
-    for table_name in table_names:
-        score, _ = _score_asset_text(query_keywords, table_name, mode_info["query_mode"])
-        if score > 0 and table_name not in relevant_table_names:
-            relevant_table_names.append(table_name)
+        for table_name in table_names:
+            score, _ = _score_asset_text(query_keywords, table_name, mode_info["query_mode"])
+            if score > 0 and table_name not in relevant_table_names:
+                relevant_table_names.append(table_name)
 
-    if enterprise_candidates and "enterprise_info" not in relevant_table_names:
-        relevant_table_names.append("enterprise_info")
+        if enterprise_candidates and "enterprise_info" not in relevant_table_names:
+            relevant_table_names.append("enterprise_info")
 
-    relevant_tables = relevant_table_names[:8]
-    async with AsyncSessionLocal() as db:
-        conn = await db.connection()
-        relevant_table_schemas = await _load_table_schema_map(conn, relevant_tables)
+        relevant_tables = relevant_table_names[:8]
+        async with AsyncSessionLocal() as db:
+            conn = await db.connection()
+            relevant_table_schemas = await _load_table_schema_map(conn, relevant_tables)
+    else:
+        relevant_models = list(semantic_grounding.get("candidate_models") or [])[:6]
+        relevant_tables = list(semantic_grounding.get("relevant_tables") or [])[:8]
+        relevant_table_schemas = list(semantic_grounding.get("relevant_table_schemas") or [])
+        enterprise_candidates = list(semantic_grounding.get("enterprise_candidates") or [])[:5]
+        query_keywords = _merge_string_lists(query_keywords, semantic_grounding.get("query_keywords") or [])
+        company_fragments = _merge_string_lists(company_fragments, semantic_grounding.get("company_fragments") or [])[:5]
 
     guidance: list[str] = []
+    if understanding_result:
+        intent_summary = str(understanding_result.get("intent_summary") or "").strip()
+        if intent_summary:
+            guidance.append(f"LLM 理解层已识别本次业务目标：{intent_summary}")
+        if understanding_result.get("candidate_models"):
+            guidance.append(
+                "优先围绕理解层选择的语义模型规划和执行："
+                + "、".join(str(name) for name in understanding_result.get("candidate_models", [])[:3])
+            )
     if mode_info["query_mode"] == "analysis":
         guidance.append("这是复杂业务分析问题，优先查询事实数据，不要默认走 metadata_query。")
         guidance.append("如果已有收入对比、差异分析、核验结果等事实资产，优先直接利用。")
+    elif mode_info["query_mode"] == "reconciliation":
+        guidance.append("这是对账问题，必须同时覆盖至少两个业务口径或两个对比对象，不能只拿单边数据。")
+    elif mode_info["query_mode"] == "diagnosis":
+        guidance.append("这是诊断/归因问题，不能只停留在差异现象，需补充原因证据或桥接项。")
     elif mode_info["query_mode"] == "metadata":
         guidance.append("这是元数据问题，可以围绕 metadata_query 规划。")
     else:
@@ -378,11 +451,14 @@ async def build_runtime_context(user_query: str) -> dict[str, Any]:
         "relevant_tables": relevant_tables,
         "relevant_table_schemas": relevant_table_schemas,
         "execution_guidance": guidance,
+        "understanding_result": understanding_result or {},
+        "semantic_grounding": semantic_grounding or {},
     }
 
 
 def validate_plan_graph(plan_graph: dict[str, Any], runtime_context: dict[str, Any]) -> list[str]:
     query_mode = runtime_context.get("query_mode")
+    understanding_result = runtime_context.get("understanding_result") or {}
     nodes = plan_graph.get("nodes") or []
     if not nodes:
         return ["计划图为空。"]
@@ -413,6 +489,15 @@ def validate_plan_graph(plan_graph: dict[str, Any], runtime_context: dict[str, A
     metadata_only = business_nodes and all(
         set(node.get("tool_hints") or []) <= {"metadata_query"} for node in business_nodes
     )
+    semantic_ready_models = [
+        item["name"]
+        for item in (runtime_context.get("relevant_models") or [])
+        if item.get("has_yaml_definition") and item.get("name")
+    ]
+    semantic_bound = any(
+        isinstance(node.get("semantic_binding"), dict) and (node.get("semantic_binding", {}).get("models") or [])
+        for node in business_nodes
+    )
 
     if query_mode == "analysis":
         if not business_nodes:
@@ -425,10 +510,27 @@ def validate_plan_graph(plan_graph: dict[str, Any], runtime_context: dict[str, A
             for hint in (node.get("tool_hints") or [])
         ):
             issues.append("复杂分析问题的计划过度聚焦表结构，而没有落到业务事实数据。")
+        if semantic_ready_models and not semantic_bound:
+            issues.append("复杂分析问题的计划缺少 semantic_binding，未显式绑定可用语义模型。")
+
+    if query_mode in {"fact_query", "reconciliation", "diagnosis"} and semantic_ready_models and not metadata_only:
+        if not semantic_bound:
+            issues.append("当前问题已有可用语义模型，但计划未显式绑定 semantic_binding。")
 
     if query_mode == "metadata":
         if any(node.get("kind") in {"analysis", "visualization"} for node in nodes):
             issues.append("元数据问题被规划成了业务分析路径。")
+
+    candidate_models = set(str(name) for name in understanding_result.get("candidate_models", []) if name)
+    if candidate_models and semantic_bound:
+        bound_models = {
+            str(model_name)
+            for node in business_nodes
+            for model_name in ((node.get("semantic_binding") or {}).get("models") or [])
+            if model_name
+        }
+        if bound_models and bound_models.isdisjoint(candidate_models):
+            issues.append("计划绑定的语义模型与理解层推荐模型不一致。")
 
     return issues
 
@@ -442,6 +544,10 @@ def build_runtime_status_text(runtime_context: dict[str, Any]) -> str:
     }.get(mode, mode)
 
     parts = [f"已识别为{mode_label}问题"]
+    understanding_result = runtime_context.get("understanding_result") or {}
+    intent_summary = str(understanding_result.get("intent_summary") or "").strip()
+    if intent_summary:
+        parts.append("理解目标：" + intent_summary)
 
     enterprises = runtime_context.get("enterprise_candidates") or []
     if enterprises:
@@ -458,5 +564,9 @@ def build_runtime_status_text(runtime_context: dict[str, Any]) -> str:
             tool = "语义" if item.get("recommended_tool") == "semantic_query" else "SQL"
             labels.append(f"{item['label']}({tool})")
         parts.append("候选资产：" + "、".join(labels))
+
+    ambiguities = understanding_result.get("ambiguities") or []
+    if ambiguities:
+        parts.append("待确认：" + "；".join(str(item) for item in ambiguities[:2]))
 
     return "；".join(parts) + "。"

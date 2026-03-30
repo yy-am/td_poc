@@ -14,7 +14,7 @@
 
 ### 架构现状
 - **当前生效的聊天链路**：`backend/app/main.py → chat_v3.py → orchestrator.py`（Planner + Executor + Reviewer 三智能体协作）
-- **旧链路**：`chat_v2.py → react_agent_v4.py` 仍保留但不再被 main.py 注册
+- **旧链路状态**：历史 `chat_v2 / react_agent / 非 clean 前端组件` 已于 2026-03-30 清理出仓库，不再保留重复实现
 - 数据库：PostgreSQL 16（`/api/v1/health` 返回 `dialect=postgresql`）
 - LLM：deepseek-v3.2（通过 OpenAI 协议统一客户端）
 
@@ -124,7 +124,6 @@ npm run dev
 - 目标：固定“先恢复上下文，再做实现，关键设计变化回写文档，中断前更新进度”的协作习惯
 
 ## 备注
-- 旧版乱码文档已额外备份为 `CODEX.legacy.md`
 - 8003 / 8004 端口可能存在本轮联调留下的临时后端实例；主链路以 8000 为准
 
 ## 2026-03-29 多智能体架构升级（最新）
@@ -244,3 +243,24 @@ npm run dev
   - 前端：`ChatView.vue -> useWebSocket.ts -> MultiAgentBoardClean.vue`
 - 文档同时标记了 legacy 文件和占位目录，避免后续助手误把旧链路当成当前实现。
 - 本轮未改动业务逻辑，只新增项目理解文档。
+
+## 2026-03-30 冗余文件清理
+
+### 本轮已完成
+- 删除主链路外的历史源码：
+  - 后端 API：`chat.py`、`chat_v2.py`、`chat_ws.py`、`router.py`、`semantic.py`、`mock_data.py`
+  - 后端 Agent：第一代三智能体文件、`react_agent*`、旧 `system_prompt*`、旧 prompt 文件、旧 `registry.py`、旧 `semantic/service.py`
+  - 前端：`ChatView_v2.vue`、`SemanticView.vue` 与非 clean 聊天展示组件
+- 删除根目录和 `backend/` 下不再使用的本地 SQLite 测试库、历史日志、legacy 交接文档以及 `backend/app/**/__pycache__`
+- 更新 `PROJECT_CODE_GUIDE.md`，把“仍保留的历史版本”改成“已完成清理”的现状描述
+
+### 本轮已验证
+- 当前入口引用仍然只走 `router_v2 + chat_v3 + orchestrator + *_v2 + *Clean.vue`
+- `frontend/package.json` 的 `build` 脚本仍为 `vue-tsc -b && vite build`
+- 当前 `.env` 仍指向 PostgreSQL；本轮删除的 SQLite 文件均为本地测试/运行残留，不是主链路数据库
+- `frontend` 目录下重新执行 `npm run build` 成功
+- 使用新的 Python 进程重新导入 `app.main`、`router_v2`、`chat_v3`、`orchestrator` 与 `*_agent_v2` 成功
+- 本地 `GET /api/v1/health` 与 `GET /api/v1/datasource/tables` 均返回 `200`
+
+### 当前未完成 / 风险
+- `backend-server-8000.log` 与 `frontend-server.log` 因被运行中的进程占用，当前未能删除；不影响功能

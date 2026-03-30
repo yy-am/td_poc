@@ -34,6 +34,14 @@ export interface PlanGraphNode {
   depends_on?: string[]
   tool_hints?: string[]
   done_when?: string
+  semantic_binding?: {
+    models?: string[]
+    metrics?: string[]
+    dimensions?: string[]
+    filters?: Array<{ field: string; op: string; value?: any }>
+    grain?: string
+    fallback_to_sql?: boolean
+  }
 }
 
 export interface PlanGraphEdge {
