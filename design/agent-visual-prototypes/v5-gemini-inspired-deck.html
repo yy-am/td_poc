@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Execution Deck V5</title>
+  <style>
+    :root{
+      --bg:#eef4ff;
+      --ink:#08121f;
+      --muted:#5f7188;
+      --line:rgba(53,82,122,.14);
+      --panel:rgba(255,255,255,.56);
+      --panel-strong:rgba(255,255,255,.78);
+      --blue:#3a8bfd;
+      --cyan:#6bcffd;
+      --mint:#63d4bf;
+      --amber:#ffb557;
+      --rose:#ff8fab;
+      --shadow:0 24px 60px rgba(31,54,88,.12);
+      --radius:28px;
+      --ui:"Segoe UI Variable Display","Aptos","Segoe UI","Microsoft YaHei UI",sans-serif;
+      --mono:Consolas,"JetBrains Mono",monospace;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0}
+    body{
+      font-family:var(--ui);
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 10% 18%, rgba(107,207,253,.28), transparent 24%),
+        radial-gradient(circle at 86% 12%, rgba(255,181,87,.18), transparent 22%),
+        radial-gradient(circle at 72% 78%, rgba(99,212,191,.18), transparent 18%),
+        linear-gradient(180deg, #f6f9ff 0%, #edf3ff 44%, #eef4ff 100%);
+      min-height:100vh;
+    }
+    body:before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(rgba(84,112,149,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(84,112,149,.05) 1px, transparent 1px);
+      background-size:40px 40px;
+      mask-image:linear-gradient(180deg, rgba(0,0,0,.46), transparent 70%);
+    }
+    .shell{
+      width:min(1560px, calc(100% - 48px));
+      margin:24px auto 36px;
+      position:relative;
+      z-index:1;
+    }
+    .board{
+      position:relative;
+      overflow:hidden;
+      min-height:930px;
+      padding:22px;
+      border-radius:36px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.68), rgba(255,255,255,.52)),
+        radial-gradient(circle at top left, rgba(107,207,253,.14), transparent 34%);
+      border:1px solid rgba(109,136,171,.18);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(22px);
+    }
+    .mesh{
+      position:absolute;
+      inset:-80px;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at 27% 27%, rgba(58,139,253,.13), transparent 16%),
+        radial-gradient(circle at 71% 36%, rgba(107,207,253,.17), transparent 14%),
+        radial-gradient(circle at 62% 72%, rgba(255,181,87,.15), transparent 12%),
+        radial-gradient(circle at 78% 84%, rgba(99,212,191,.13), transparent 15%);
+      filter:blur(12px);
+      opacity:.95;
+    }
+    .topbar{
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:18px;
+      margin-bottom:18px;
+    }
+    .glass{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:26px;
+      box-shadow:0 18px 42px rgba(31,54,88,.08);
+      backdrop-filter:blur(18px);
+    }
+    .runbox{
+      padding:18px 22px;
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:14px;
+      align-items:center;
+    }
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(58,139,253,.08);
+      color:#2f6fe0;
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .eyebrow:before{
+      content:"";
+      width:7px;height:7px;border-radius:50%;
+      background:linear-gradient(180deg, #3a8bfd, #6bcffd);
+      box-shadow:0 0 0 6px rgba(58,139,253,.10);
+    }
+    .prompt{
+      margin-top:14px;
+      font-size:31px;
+      line-height:1.15;
+      letter-spacing:-.03em;
+      max-width:17ch;
+      font-weight:700;
+    }
+    .sub{
+      margin-top:12px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.7;
+      max-width:64ch;
+    }
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.62);
+      border:1px solid rgba(78,107,142,.12);
+      font-size:12px;
+      color:#51657f;
+    }
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+      padding:18px;
+    }
+    .stat{
+      padding:16px;
+      border-radius:22px;
+      background:rgba(255,255,255,.72);
+      border:1px solid rgba(77,107,144,.10);
+    }
+    .stat b{
+      display:block;
+      font-size:26px;
+      line-height:1;
+      margin-bottom:8px;
+      letter-spacing:-.03em;
+    }
+    .stat span{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.5;
+    }
+    .workspace{
+      display:grid;
+      grid-template-columns:220px minmax(0,1fr) 330px;
+      gap:18px;
+      min-height:790px;
+    }
+    .rail{
+      padding:18px 16px;
+    }
+    .rail h3,.inspector h3{
+      margin:0 0 14px;
+      font-size:12px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:#70839a;
+    }
+    .stage{
+      position:relative;
+      padding:14px 14px 14px 18px;
+      border-radius:20px;
+      background:rgba(255,255,255,.52);
+      border:1px solid rgba(75,105,142,.10);
+      margin-bottom:12px;
+    }
+    .stage.active{
+      background:linear-gradient(180deg, rgba(255,243,225,.82), rgba(255,255,255,.64));
+      border-color:rgba(224,165,75,.30);
+      box-shadow:0 18px 32px rgba(255,181,87,.14);
+    }
+    .stage.done{
+      background:linear-gradient(180deg, rgba(236,251,247,.86), rgba(255,255,255,.64));
+    }
+    .stage .n{
+      display:inline-flex;
+      width:30px;height:30px;border-radius:15px;
+      align-items:center;justify-content:center;
+      background:#eef5ff;
+      color:#4d6380;
+      font-size:12px;font-weight:700;
+      margin-bottom:10px;
+    }
+    .stage.active .n{background:#fff4e4;color:#d38a1f}
+    .stage .t{font-size:18px;font-weight:700;letter-spacing:-.02em}
+    .stage .d{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.6}
+    .stage .dot{
+      position:absolute;right:14px;top:14px;
+      width:12px;height:12px;border-radius:50%;
+      background:#b7c5d8;
+    }
+    .stage.done .dot{background:#76d8bf}
+    .stage.active .dot{background:#ffb557;box-shadow:0 0 0 8px rgba(255,181,87,.16)}
+    .canvas{
+      position:relative;
+      padding:20px;
+      overflow:hidden;
+    }
+    .canvasbox{
+      position:relative;
+      height:100%;
+      min-height:748px;
+      border-radius:30px;
+      background:
+        linear-gradient(180deg, rgba(250,252,255,.88), rgba(242,247,255,.68)),
+        radial-gradient(circle at 50% 48%, rgba(58,139,253,.07), transparent 18%);
+      border:1px solid rgba(78,108,143,.12);
+      overflow:hidden;
+    }
+    .col{
+      position:absolute;top:0;bottom:0;
+      border-right:1px solid rgba(88,115,149,.08);
+      background:linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,0));
+    }
+    .col span{
+      position:absolute;left:18px;top:16px;
+      font-size:11px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:#7a8ca2;
+    }
+    svg{
+      position:absolute;inset:0;width:100%;height:100%;
+      pointer-events:none;
+    }
+    .flow path{
+      fill:none;
+      stroke:rgba(72,115,165,.24);
+      stroke-width:3;
+      stroke-linecap:round;
+    }
+    .flow path.hot{
+      stroke:url(#hotLine);
+      stroke-width:4;
+      opacity:.92;
+    }
+    .halo{
+      position:absolute;border-radius:999px;filter:blur(22px);opacity:.68;
+    }
+    .halo.blue{background:rgba(107,207,253,.36)}
+    .halo.amber{background:rgba(255,181,87,.30)}
+    .node{
+      position:absolute;
+      width:228px;
+      min-height:128px;
+      padding:16px;
+      border-radius:28px;
+      background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(255,255,255,.62));
+      border:1px solid rgba(81,109,143,.12);
+      box-shadow:0 20px 40px rgba(29,55,91,.10);
+    }
+    .node.big{
+      width:260px;
+      min-height:148px;
+      padding:18px;
+    }
+    .node.active{
+      background:linear-gradient(180deg, rgba(255,248,239,.96), rgba(255,255,255,.74));
+      border-color:rgba(228,165,76,.34);
+      box-shadow:0 28px 48px rgba(255,181,87,.18);
+    }
+    .node .k{
+      display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;
+      font-size:11px;color:#7b8da2;text-transform:uppercase;letter-spacing:.08em;
+    }
+    .status{
+      padding:5px 8px;border-radius:999px;font-size:10px;font-weight:700;
+      background:#edf4ff;color:#4d6380;
+    }
+    .status.done{background:#ebfbf5;color:#1f8b68}
+    .status.active{background:#fff0db;color:#c7821b}
+    .node .title{
+      font-size:18px;
+      font-weight:700;
+      line-height:1.15;
+      letter-spacing:-.03em;
+    }
+    .node.big .title{font-size:22px}
+    .node .desc{
+      margin-top:8px;
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.6;
+    }
+    .tags{
+      display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;
+    }
+    .tag{
+      padding:6px 9px;border-radius:999px;
+      background:rgba(237,244,255,.86);
+      border:1px solid rgba(88,116,150,.08);
+      font-size:10px;color:#4d6481;
+    }
+    .center{
+      position:absolute;
+      left:50%;top:49%;
+      transform:translate(-50%,-50%);
+      width:328px;height:328px;border-radius:50%;
+      display:grid;place-items:center;
+      background:
+        radial-gradient(circle, rgba(255,255,255,.96) 0%, rgba(242,248,255,.86) 46%, rgba(223,236,255,.42) 68%, transparent 69%);
+    }
+    .center:before{
+      content:"";
+      position:absolute;inset:26px;border-radius:50%;
+      background:radial-gradient(circle, rgba(43,84,135,.08), rgba(255,255,255,0));
+      border:1px solid rgba(85,114,149,.12);
+    }
+    .center:after{
+      content:"";
+      position:absolute;inset:72px;border-radius:50%;
+      border:1px solid rgba(79,111,146,.10);
+    }
+    .question{
+      position:relative;
+      z-index:1;
+      text-align:center;
+      width:220px;
+    }
+    .question .mini{
+      font-size:11px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:#7a8ca2;
+    }
+    .question .main{
+      margin-top:8px;
+      font-size:34px;
+      line-height:1.02;
+      letter-spacing:-.05em;
+      font-weight:800;
+    }
+    .question .sub{
+      margin-top:10px;
+      font-size:15px;
+      color:#be7d26;
+      line-height:1.5;
+    }
+    .question .caption{
+      margin-top:12px;
+      font-size:12px;
+      color:#6c7f97;
+      line-height:1.6;
+    }
+    .inspector{
+      padding:18px;
+    }
+    .ibox{
+      padding:16px;
+      border-radius:22px;
+      background:var(--panel-strong);
+      border:1px solid rgba(79,108,143,.12);
+      box-shadow:0 18px 36px rgba(29,55,91,.07);
+      margin-bottom:12px;
+    }
+    .ibox .label{
+      display:block;
+      margin-bottom:10px;
+      font-size:11px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:#7b8da2;
+    }
+    .ibox .big{
+      font-size:32px;
+      line-height:1.02;
+      letter-spacing:-.05em;
+      font-weight:800;
+      max-width:8ch;
+    }
+    .ibox .hint{
+      margin-top:8px;
+      color:#be7d26;
+      font-size:14px;
+    }
+    .fold{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:14px 16px;border-radius:18px;
+      background:rgba(233,241,255,.72);
+      border:1px solid rgba(79,108,143,.10);
+      font-size:15px;
+    }
+    .fold b{font-size:15px}
+    .fold span{font-size:12px;color:var(--muted)}
+    .rows{
+      display:grid;gap:10px;
+    }
+    .row{
+      display:grid;grid-template-columns:100px 1fr;gap:10px;
+      font-size:13px;line-height:1.7;
+    }
+    .row b{color:#445971}
+    .sql{
+      margin-top:10px;
+      padding:14px 16px;
+      border-radius:18px;
+      background:#0d1c2f;
+      color:#99f1d5;
+      font:13px/1.7 var(--mono);
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .list{display:grid;gap:10px}
+    .li{
+      padding:10px 12px;border-radius:16px;
+      background:rgba(236,244,255,.82);
+      font-size:13px;color:#52657d;
+      line-height:1.6;
+    }
+    .footerbar{
+      position:absolute;left:22px;right:22px;bottom:22px;
+      display:flex;gap:10px;flex-wrap:wrap;
+    }
+    .footerbar span{
+      padding:10px 14px;border-radius:999px;
+      background:rgba(255,255,255,.56);
+      border:1px solid rgba(78,108,143,.10);
+      font-size:12px;color:#5f7188;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="board">
+      <div class="mesh"></div>
+
+      <div class="topbar">
+        <div class="glass runbox">
+          <div>
+            <span class="eyebrow">Execution Atlas · Gemini-ish refinement</span>
+            <div class="prompt">分析华兴科技 2024 Q3 税账差异，并解释差异构成。</div>
+            <div class="sub">不是后台监控台，而是可审阅的智能执行画布。语义绑定在前，SQL 作为穿透层，结论可以回链到节点。</div>
+            <div class="chips">
+              <span class="chip">Tax Reconciliation</span>
+              <span class="chip">Huaxing Tech</span>
+              <span class="chip">2024 Q3</span>
+              <span class="chip">Planner → Executor → Reviewer</span>
+            </div>
+          </div>
+        </div>
+        <div class="glass stats">
+          <div class="stat"><b>08</b><span>关键节点<br/>更少、更大、更有舞台感</span></div>
+          <div class="stat"><b>04</b><span>语义模型<br/>主模型 + 支撑模型</span></div>
+          <div class="stat"><b>03</b><span>工具调用<br/>语义优先，SQL 后置</span></div>
+          <div class="stat"><b>92s</b><span>预计运行时长<br/>保留 run 感知</span></div>
+        </div>
+      </div>
+
+      <div class="workspace">
+        <aside class="glass rail">
+          <h3>Stages</h3>
+          <div class="stage done">
+            <div class="dot"></div>
+            <div class="n">01</div>
+            <div class="t">问题理解</div>
+            <div class="d">识别企业、期间、查询模式，先确认这是差异诊断而不是 metadata 查询。</div>
+          </div>
+          <div class="stage done">
+            <div class="dot"></div>
+            <div class="n">02</div>
+            <div class="t">语义绑定</div>
+            <div class="d">选定主模型与辅助模型，建立 grain、filters 与 evidence 要求。</div>
+          </div>
+          <div class="stage active">
+            <div class="dot"></div>
+            <div class="n">03</div>
+            <div class="t">证据执行</div>
+            <div class="d">先拉差异事实，再拆解差异构成，必要时才下探显式 SQL。</div>
+          </div>
+          <div class="stage">
+            <div class="dot"></div>
+            <div class="n">04</div>
+            <div class="t">审查门禁</div>
+            <div class="d">检查证据覆盖、实体过滤和口径一致性，决定 approve / reject。</div>
+          </div>
+          <div class="stage">
+            <div class="dot"></div>
+            <div class="n">05</div>
+            <div class="t">结论交付</div>
+            <div class="d">最终报告并非终点，支持从结论回到执行节点继续审阅。</div>
+          </div>
+        </aside>
+
+        <main class="glass canvas">
+          <div class="canvasbox">
+            <div class="col" style="left:0;width:22%"><span>Understanding</span></div>
+            <div class="col" style="left:22%;width:20%"><span>Semantic Binding</span></div>
+            <div class="col" style="left:42%;width:30%"><span>Evidence Execution</span></div>
+            <div class="col" style="left:72%;width:13%"><span>Review</span></div>
+            <div class="col" style="left:85%;width:15%"><span>Delivery</span></div>
+
+            <div class="halo blue" style="left:198px;top:190px;width:150px;height:150px"></div>
+            <div class="halo blue" style="left:512px;top:118px;width:150px;height:150px"></div>
+            <div class="halo amber" style="left:780px;top:418px;width:188px;height:188px"></div>
+
+            <svg class="flow" viewBox="0 0 960 760" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="hotLine" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#67c8ff" />
+                  <stop offset="100%" stop-color="#ffb557" />
+                </linearGradient>
+              </defs>
+              <path d="M 240 216 C 340 216, 360 216, 454 188" />
+              <path d="M 240 504 C 338 504, 372 428, 454 370" />
+              <path class="hot" d="M 544 192 C 658 192, 700 192, 790 238" />
+              <path class="hot" d="M 560 382 C 680 382, 734 432, 812 478" />
+              <path d="M 816 248 C 868 248, 886 302, 876 366" />
+              <path d="M 842 478 C 900 478, 904 586, 876 640" />
+              <path d="M 882 366 C 926 366, 936 434, 938 610" />
+            </svg>
+
+            <section class="node" style="left:58px;top:132px">
+              <div class="k"><span>01 · Understanding</span><span class="status done">done</span></div>
+              <div class="title">识别问题目标</div>
+              <div class="desc">确认这是税账差异诊断，锁定企业、期间与证据要求。</div>
+              <div class="tags"><span class="tag">analysis</span><span class="tag">enterprise</span><span class="tag">period</span></div>
+            </section>
+
+            <section class="node" style="left:78px;top:420px">
+              <div class="k"><span>01B · Resolver</span><span class="status done">done</span></div>
+              <div class="title">实体期间解析</div>
+              <div class="desc">企业名映射为 taxpayer_id，并把季度展开为 7-9 月。</div>
+              <div class="tags"><span class="tag">dim_enterprise</span><span class="tag">month grain</span></div>
+            </section>
+
+            <section class="node" style="left:392px;top:104px">
+              <div class="k"><span>02 · Planner</span><span class="status done">done</span></div>
+              <div class="title">绑定语义模型</div>
+              <div class="desc">主模型回答差异事实，辅助模型补差异构成与事实校验。</div>
+              <div class="tags"><span class="tag">mart_revenue_reconciliation</span><span class="tag">mart_adjustment_tracking</span></div>
+            </section>
+
+            <div class="center">
+              <div class="question">
+                <div class="mini">current focus</div>
+                <div class="main">差异构成分析</div>
+                <div class="sub">Executor · Active</div>
+                <div class="caption">把“差了多少”拆成“为什么差”，这是整个 run 的叙事中心。</div>
+              </div>
+            </div>
+
+            <section class="node big" style="left:690px;top:146px">
+              <div class="k"><span>03 · Executor</span><span class="status done">done</span></div>
+              <div class="title">提取 Q3 差异事实</div>
+              <div class="desc">先用 semantic_query 拉平逐月差异，形成事实锚点，再决定是否继续钻取。</div>
+              <div class="tags"><span class="tag">semantic_query</span><span class="tag">3 rows</span><span class="tag">Q3 diff</span></div>
+            </section>
+
+            <section class="node big active" style="left:660px;top:388px">
+              <div class="k"><span>04 · Active Node</span><span class="status active">active</span></div>
+              <div class="title">拆解差异构成</div>
+              <div class="desc">时间性差异、口径差异、零散调整三类证据被重组成可读的分析面板。</div>
+              <div class="tags"><span class="tag">mart_adjustment_tracking</span><span class="tag">semantic first</span><span class="tag">review pending</span></div>
+            </section>
+
+            <section class="node" style="left:668px;top:612px">
+              <div class="k"><span>05 · SQL Audit</span><span class="status">pending</span></div>
+              <div class="title">明细 SQL 校验</div>
+              <div class="desc">只在需要时穿透，不让 SQL 抢走主视角。</div>
+              <div class="tags"><span class="tag">fallback</span><span class="tag">audit only</span></div>
+            </section>
+
+            <section class="node" style="left:832px;top:268px">
+              <div class="k"><span>06 · Reviewer</span><span class="status">pending</span></div>
+              <div class="title">Reviewer 审查</div>
+              <div class="desc">检查证据覆盖和实体过滤，决定是否 approve。</div>
+              <div class="tags"><span class="tag">coverage</span><span class="tag">verdict</span></div>
+            </section>
+
+            <section class="node" style="left:840px;top:562px">
+              <div class="k"><span>07 · Delivery</span><span class="status">pending</span></div>
+              <div class="title">最终报告回链</div>
+              <div class="desc">结论、图表和建议都能反查到执行节点。</div>
+              <div class="tags"><span class="tag">answer</span><span class="tag">drill back</span></div>
+            </section>
+          </div>
+        </main>
+
+        <aside class="glass inspector">
+          <h3>Node Inspector</h3>
+
+          <div class="ibox">
+            <span class="label">active node</span>
+            <div class="big">拆解差异构成</div>
+            <div class="hint">Executor · Active · 16.8s</div>
+          </div>
+
+          <div class="ibox">
+            <div class="fold"><b>思路摘要</b><span>默认收起</span></div>
+          </div>
+
+          <div class="ibox">
+            <span class="label">semantic binding</span>
+            <div class="rows">
+              <div class="row"><b>entry</b><span>mart_adjustment_tracking</span></div>
+              <div class="row"><b>support</b><span>fact_vat_declaration</span></div>
+              <div class="row"><b>grain</b><span>month in quarter</span></div>
+              <div class="row"><b>filters</b><span>华兴科技 · 2024-07 ~ 09</span></div>
+            </div>
+          </div>
+
+          <div class="ibox">
+            <span class="label">tool</span>
+            <div style="font-size:28px;font-weight:800;letter-spacing:-.04em">semantic_query</div>
+            <div class="sub" style="margin-top:6px">group by source_category · sort by difference desc</div>
+          </div>
+
+          <div class="ibox">
+            <span class="label">sql</span>
+            <div class="sub" style="margin-top:0">这条 SQL 是解释差异来源的穿透层，不是主入口。</div>
+            <div class="sql">SELECT source_category,
+       SUM(difference)
+FROM recon_adjustment_tracking
+WHERE taxpayer_id = ...
+GROUP BY source_category;</div>
+          </div>
+
+          <div class="ibox">
+            <span class="label">result / review</span>
+            <div class="list">
+              <div class="li">时间性差异 401,228.11</div>
+              <div class="li">口径差异 102,890.36</div>
+              <div class="li">Reviewer 建议：补一次 SQL audit，提高汇报可信度</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="footerbar">
+        <span>更少框</span>
+        <span>更大呼吸感</span>
+        <span>中心问题锚点</span>
+        <span>语义优先，SQL 后置</span>
+        <span>结论可回链</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

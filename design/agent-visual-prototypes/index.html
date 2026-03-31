@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agent Visual Prototypes</title>
+  <style>
+    :root{
+      --bg:#07101d;--panel:rgba(10,18,34,.9);--line:rgba(124,149,188,.18);--text:#edf4ff;--muted:#8ea6c9;
+      --cyan:#62d6ff;--teal:#47e0c1;--amber:#ffbe63;--lime:#9de06e;--rose:#ff7b97;--violet:#7c93ff;
+      --radius:22px;--mono:Consolas,"JetBrains Mono",monospace;--ui:Bahnschrift,"Segoe UI","Microsoft YaHei",sans-serif;
+    }
+    *{box-sizing:border-box} html,body{margin:0;background:
+      radial-gradient(circle at 14% 16%,rgba(98,214,255,.14),transparent 26%),
+      radial-gradient(circle at 84% 12%,rgba(255,190,99,.12),transparent 18%),
+      linear-gradient(160deg,#06101b,#0a1423 55%,#040914);color:var(--text);font-family:var(--ui)}
+    body:before{content:"";position:fixed;inset:0;background:
+      linear-gradient(rgba(130,155,194,.06) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(130,155,194,.06) 1px,transparent 1px);background-size:52px 52px;opacity:.45;pointer-events:none}
+    a{color:inherit}
+    .shell{position:relative;z-index:1;width:min(1640px,calc(100% - 44px));margin:22px auto 40px}
+    .hero{display:grid;grid-template-columns:1.25fr .9fr;gap:16px;margin-bottom:18px}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:28px;box-shadow:0 22px 60px rgba(0,0,0,.42);backdrop-filter:blur(18px)}
+    .hero-main{padding:28px}.hero-ref{padding:22px}
+    .eyebrow{display:inline-block;padding:7px 12px;border-radius:999px;border:1px solid rgba(98,214,255,.28);background:rgba(98,214,255,.08);color:var(--cyan);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+    h1{margin:18px 0 12px;font-size:clamp(30px,3vw,52px);line-height:1.03;max-width:12ch}
+    .hero p{font-size:15px;line-height:1.75;color:var(--muted);max-width:72ch}
+    .pills,.tabs,.links,.chips{display:flex;flex-wrap:wrap;gap:8px}
+    .pill,.tab,.link,.chip{padding:8px 12px;border-radius:999px;border:1px solid rgba(142,166,201,.16);background:rgba(255,255,255,.03);font-size:12px}
+    .tab.active{border-color:rgba(98,214,255,.35);background:rgba(98,214,255,.12);color:var(--cyan)}
+    .ref-item{padding:13px 14px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(142,166,201,.13);margin-bottom:10px}
+    .ref-item strong{display:block;font-size:13px;margin-bottom:5px}.ref-item span{display:block;font-size:12px;line-height:1.65;color:var(--muted);margin-bottom:8px}
+    .stack{display:grid;gap:22px}
+    .proto-head{display:flex;justify-content:space-between;gap:14px;padding:22px 24px 16px;border-bottom:1px solid var(--line)}
+    .proto-kicker{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)}
+    .proto-title{margin:7px 0 8px;font-size:clamp(24px,2vw,34px);line-height:1.05}.proto-sub{font-size:14px;line-height:1.7;color:var(--muted);max-width:70ch}
+    .meta{display:grid;gap:8px;min-width:280px}.meta-box{padding:11px 13px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(142,166,201,.13);font-size:12px;line-height:1.65;color:var(--muted)}
+    .meta-box strong{color:#dae7fb}
+    .proto-body{display:grid;grid-template-columns:1.15fr .85fr;min-height:760px}
+    .map{padding:20px 22px;border-right:1px solid var(--line)} .inspect{padding:20px;background:rgba(255,255,255,.02)}
+    .panel-title{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+    .mapbox{position:relative;height:700px;border-radius:24px;border:1px solid rgba(142,166,201,.14);background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0)),rgba(6,12,22,.58);overflow:hidden}
+    .band{position:absolute;top:0;bottom:0;border-right:1px solid rgba(142,166,201,.08);background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0))}
+    .band span{position:absolute;top:16px;left:16px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(219,232,255,.48)}
+    .node{position:absolute;width:214px;min-height:126px;padding:13px 14px;border-radius:20px;border:1px solid rgba(142,166,201,.15);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015)),rgba(9,16,30,.9);box-shadow:0 18px 36px rgba(0,0,0,.3);cursor:pointer;transition:.18s transform,.18s border-color,.18s background}
+    .node:hover{transform:translateY(-3px);border-color:rgba(98,214,255,.28)} .node.active{border-color:rgba(98,214,255,.42);background:linear-gradient(180deg,rgba(98,214,255,.11),rgba(255,255,255,.02)),rgba(9,16,30,.96)}
+    .node.live{box-shadow:0 0 0 1px rgba(98,214,255,.18),0 22px 42px rgba(0,0,0,.34)}
+    .node-head{display:flex;justify-content:space-between;gap:8px;margin-bottom:10px}.node-k{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.05);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+    .node-s{padding:4px 8px;border-radius:999px;font-size:10px;text-transform:uppercase;font-weight:700;color:#07101d;background:#d8ecff}.node-s.pending{background:rgba(142,166,201,.24);color:#d0ddf2}.node-s.live{background:rgba(98,214,255,.95)}.node-s.done{background:rgba(157,224,110,.92)}.node-s.review{background:rgba(255,190,99,.92)}
+    .node h3{margin:0 0 6px;font-size:16px;line-height:1.2}.node p{margin:0 0 10px;font-size:12px;line-height:1.6;color:var(--muted)}
+    .tagline{display:flex;flex-wrap:wrap;gap:6px}.tag{padding:5px 8px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(142,166,201,.12);font-size:10px}
+    .connector{position:absolute;inset:0;pointer-events:none}
+    .connector path{stroke:rgba(114,142,181,.48);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-dasharray:8 10}
+    .connector path.hot{stroke:rgba(98,214,255,.86)}
+    .orbit-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:246px;height:246px;border-radius:50%;display:grid;place-items:center;text-align:center;padding:20px;background:radial-gradient(circle,rgba(98,214,255,.23),rgba(8,18,32,.97) 63%);border:1px solid rgba(98,214,255,.25);box-shadow:0 0 0 34px rgba(98,214,255,.02),0 0 0 120px rgba(98,214,255,.012)}
+    .orbit-center strong{display:block;font-size:28px;line-height:1.06;margin-bottom:8px}.orbit-center span{font-size:13px;line-height:1.7;color:var(--muted)}
+    .ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;border:1px dashed rgba(114,142,181,.2)}
+    .label{position:absolute;padding:7px 11px;border-radius:999px;background:rgba(255,255,255,.03);border:1px solid rgba(142,166,201,.13);font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+    .ibox{padding:14px 15px;border-radius:18px;border:1px solid rgba(142,166,201,.12);background:rgba(255,255,255,.03);margin-bottom:10px}
+    .ibox strong{display:block;margin-bottom:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+    .ibox p,.ibox li{margin:0;font-size:12px;line-height:1.75;color:var(--muted)} .ibox ul{margin:0;padding-left:18px}
+    details{padding:0 15px;border-radius:18px;border:1px solid rgba(142,166,201,.12);background:rgba(255,255,255,.03);margin-bottom:10px}
+    summary{list-style:none;cursor:pointer;padding:15px 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#dce8fb;display:flex;justify-content:space-between;gap:8px}
+    summary::-webkit-details-marker{display:none}.fold{padding:0 0 15px;border-top:1px solid rgba(142,166,201,.08)}
+    .grid{display:grid;gap:9px}.row{display:grid;grid-template-columns:114px 1fr;gap:10px;font-size:12px;line-height:1.7}.row b{color:#dce8fb}
+    pre{margin:10px 0 0;padding:14px;border-radius:15px;background:rgba(4,10,18,.82);border:1px solid rgba(142,166,201,.1);font-size:11px;line-height:1.7;color:#c6ddff;font-family:var(--mono);white-space:pre-wrap;word-break:break-word}
+    .sql{color:#9ee8d9}.foot{display:flex;flex-wrap:wrap;gap:10px;padding:16px 24px 20px;border-top:1px solid var(--line);background:rgba(255,255,255,.02)}
+    .ft{padding:9px 12px;border-radius:999px;border:1px solid rgba(142,166,201,.12);background:rgba(255,255,255,.03);font-size:12px;color:var(--muted)}
+    @media (max-width:1280px){.hero,.proto-body{grid-template-columns:1fr}.map{border-right:0;border-bottom:1px solid var(--line)}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="card hero-main">
+        <span class="eyebrow">Agent Trace / Workflow / Graph Prototype</span>
+        <h1>把执行计划改成可点击、可深挖、可解释的图</h1>
+        <p>目标不是只做一个更复杂的面板，而是让用户一眼看出 Understanding、Grounding、Planning、Execution、Review 分别在做什么，并且点开任一节点后，能继续看真正思考过程、语义模型、tool、SQL、证据和审查结论。</p>
+        <div class="pills">
+          <span class="pill">Graph-first / 图优先</span><span class="pill">Node Inspector / 节点检查器</span><span class="pill">Collapsible Reasoning / 折叠思考</span><span class="pill">Semantic Binding Visible / 语义绑定可见</span>
+        </div>
+      </div>
+      <aside class="card hero-ref">
+        <div class="panel-title">Reference Cases / 线上参考</div>
+        <div id="refs"></div>
+      </aside>
+    </section>
+    <div class="tabs" id="tabs"></div>
+    <div class="stack" id="app"></div>
+  </div>
+  <script>
+    const refs=[
+      ["LangSmith Traces","trace tree + 右侧详情检查器，适合展示 reasoning、tool 与输入输出。","https://docs.langchain.com/langsmith/observability-quickstart"],
+      ["LangGraph Studio","graph 视图 + 状态检查，适合表达阶段与节点关系。","https://langchain-ai.github.io/langgraph/cloud/how-tos/studio/"],
+      ["n8n Executions","canvas + execution data 面板，适合点击节点后看运行细节。","https://docs.n8n.io/workflows/executions/"],
+      ["CrewAI Flows","flow plot 适合强化多阶段协作路径。","https://docs.crewai.com/concepts/flows"]
+    ]
+    const N={
+      query:{id:"query",role:"orchestrator",status:"done",stage:"Question",title:"User Query / 用户问题",sub:"查看链龙商贸的税务风险指标预警",summary:"接收问题并决定进入风险主题语义链路。",reason:"先识别这是风险预警主题，不应默认把企业匹配 SQL 作为主任务节点。",sem:{entry:"None",support:["dim_enterprise"],dims:["enterprise_name"],metrics:[],ef:{enterprise_name:["链龙商贸"]},rf:{},grain:"request",fallback:"none"},tools:[],sql:"",evidence:["用户问题","会话上下文"],review:["触发语义召回与理解层"]},
+      retrieve:{id:"retrieve",role:"orchestrator",status:"done",stage:"Semantic",title:"Semantic Retrieval / 语义召回",sub:"先召回实体、原子、复合三层语义资产",summary:"召回 dim_enterprise、fact_tax_risk_indicator、mart_tax_risk_alert。",reason:"按实体/原子/复合三层目录召回，避免 LLM 裸猜全库结构。",sem:{entry:"mart_tax_risk_alert",support:["dim_enterprise","fact_tax_risk_indicator"],dims:["enterprise_name","tax_period","indicator_name","risk_level"],metrics:["indicator_value","threshold_value","warning_count"],ef:{enterprise_name:["链龙商贸"]},rf:{},grain:"indicator_period_enterprise",fallback:"atomic_then_sql"},tools:["semantic_catalog"],sql:"",evidence:["候选语义模型"],review:["风险主题命中"]},
+      understand:{id:"understand",role:"planner",status:"done",stage:"Understanding",title:"Understanding / 智能理解",sub:"形成结构化业务意图",summary:"输出 understanding_result，明确主题、实体、证据需求。",reason:"这是企业风险预警查看，不是元数据查询；需要风险指标值、阈值、等级与预警说明。",sem:{entry:"mart_tax_risk_alert",support:["dim_enterprise","fact_tax_risk_indicator"],dims:["enterprise_name","tax_period","indicator_name","risk_level"],metrics:["indicator_value","threshold_value","warning_count"],ef:{enterprise_name:["链龙商贸"]},rf:{},grain:"month",fallback:"atomic_then_sql"},tools:["llm_reasoning"],sql:"",evidence:["understanding_result"],review:["query_mode=warning"]},
+      grounding:{id:"grounding",role:"planner",status:"done",stage:"Grounding",title:"Grounding / 语义校验",sub:"把业务过滤转成可执行键",summary:"确认主题模型可用，并将 enterprise_name 解析为 taxpayer_id。",reason:"enterprise_info 是实体解析依赖，不应成为用户视角主节点。",sem:{entry:"mart_tax_risk_alert",support:["dim_enterprise","fact_tax_risk_indicator"],dims:["enterprise_name","tax_period","indicator_name","risk_level"],metrics:["indicator_value","threshold_value","warning_count"],ef:{enterprise_name:["链龙商贸"]},rf:{taxpayer_id:["91320100LLSM88888X"]},grain:"month",fallback:"atomic_then_sql"},tools:["entity_resolver","semantic_validator"],sql:"",evidence:["解析后的 taxpayer_id"],review:["允许进入执行层"]},
+      plan:{id:"plan",role:"planner",status:"done",stage:"Planning",title:"Planner / 语义规划",sub:"输出带 semantic_binding 的 plan_graph",summary:"主节点变成风险预警查询，而不是企业精确匹配 SQL。",reason:"计划重点应展示绑定哪个语义模型以及要拿哪些证据，不应让物理表动作主导用户认知。",sem:{entry:"mart_tax_risk_alert",support:["dim_enterprise","fact_tax_risk_indicator"],dims:["enterprise_name","tax_period","indicator_name","risk_level"],metrics:["indicator_value","threshold_value","warning_count"],ef:{enterprise_name:["链龙商贸"]},rf:{taxpayer_id:["91320100LLSM88888X"]},grain:"month",fallback:"atomic_then_sql"},tools:["llm_planner"],sql:"",evidence:["plan_graph","semantic_binding"],review:["语义绑定校验通过"]},
+      execute:{id:"execute",role:"executor",status:"live",stage:"Execution",title:"Executor / 语义优先执行",sub:"先 semantic_query，再由编译器生成 SQL",summary:"执行层最终仍会落到 SQL，但 SQL 来源应是 semantic_binding -> semantic compiler。",reason:"优先从 mart_tax_risk_alert 进入；如果主题模型不完整，再退回 fact_tax_risk_indicator，最后才是显式 SQL。",sem:{entry:"mart_tax_risk_alert",support:["dim_enterprise","fact_tax_risk_indicator"],dims:["enterprise_name","tax_period","indicator_name","risk_level"],metrics:["indicator_value","threshold_value","warning_count"],ef:{enterprise_name:["链龙商贸"]},rf:{taxpayer_id:["91320100LLSM88888X"]},grain:"month",fallback:"atomic_then_sql"},tools:["semantic_query","semantic_compiler"],sql:`SELECT ent.enterprise_name, risk.tax_period, risk.indicator_name, risk.risk_level,\nrisk.indicator_value, risk.threshold_value, risk.alert_message\nFROM tax_risk_indicators AS risk\nLEFT JOIN enterprise_info AS ent ON risk.taxpayer_id = ent.taxpayer_id\nWHERE risk.taxpayer_id = :taxpayer_id\nORDER BY risk.risk_level DESC, risk.tax_period DESC\nLIMIT 20;`,evidence:["风险指标值","阈值","风险等级","预警说明"],review:["SQL 来源于语义编译"]},
+      review:{id:"review",role:"reviewer",status:"review",stage:"Review",title:"Reviewer / 审查",sub:"检查实体过滤、口径和证据闭环",summary:"确认实体过滤正确，返回字段能支撑‘风险预警’结论。",reason:"重点检查 resolved_filters 是否真的落到目标企业，以及是否有足够字段支撑最终回答。",sem:{entry:"mart_tax_risk_alert",support:["fact_tax_risk_indicator"],dims:["enterprise_name","indicator_name","risk_level"],metrics:["indicator_value","threshold_value"],ef:{enterprise_name:["链龙商贸"]},rf:{taxpayer_id:["91320100LLSM88888X"]},grain:"month",fallback:"none"},tools:["llm_reviewer"],sql:"",evidence:["实体过滤正确","高风险项齐全"],review:["PASS","无需 replan"]},
+      answer:{id:"answer",role:"reviewer",status:"pending",stage:"Answer",title:"Answer / 最终汇总",sub:"生成用户可读结论与证据摘要",summary:"输出高风险项、预警说明和建议动作。",reason:"最终答案要先说高风险项，再给证据和来源，而不是只写一段笼统总结。",sem:{entry:"mart_tax_risk_alert",support:["fact_tax_risk_indicator"],dims:["indicator_name","risk_level"],metrics:["indicator_value","threshold_value"],ef:{enterprise_name:["链龙商贸"]},rf:{taxpayer_id:["91320100LLSM88888X"]},grain:"answer",fallback:"none"},tools:["llm_synthesizer"],sql:"",evidence:["高风险项 Top N","证据摘要"],review:["等待输出最终回答"]}}
+    const links=[["query","retrieve"],["retrieve","understand"],["understand","grounding"],["grounding","plan"],["plan","execute"],["execute","review"],["review","answer"]]
+    const P={v1:{k:"Concept 01",t:"Command Graph / 指挥图谱板",s:"阶段轨道 + 中央图谱 + 右侧节点检查器。最适合当前产品主方案。",th:"最平衡：清晰、智能体感强、工程落地也顺。",use:"日常问数、复杂执行链路、领导演示。",pos:{query:[6,12],retrieve:[24,20],understand:[42,20],grounding:[60,20],plan:[78,20],execute:[78,56],review:[60,56],answer:[42,56]},bands:[[0,18,"Question"],[18,18,"Semantic"],[36,18,"Understanding"],[54,18,"Grounding"],[72,28,"Plan · Execute · Review"]]},
+      v2:{k:"Concept 02",t:"Stage Atlas / 阶段作战图",s:"把阶段感做得最强，左边是节奏条带，中间是作战地图，右边是深潜详情。",th:"最适合表达‘各阶段在做啥’，适合治理与流程型展示。",use:"架构汇报、流程治理、replan 对比。",pos:{query:[6,72],retrieve:[16,18],understand:[40,18],grounding:[64,18],plan:[76,40],execute:[56,58],review:[32,58],answer:[76,66]},bands:[[0,25,"Semantic"],[25,25,"Understanding"],[50,25,"Grounding"],[75,25,"Plan / Execute / Review"]]},
+      v3:{k:"Concept 03",t:"Orbit Console / 轨道指挥舱",s:"问题居中，理解、语义、执行、审查围绕它协作。更炫，更像 Demo 舱。",th:"最炫酷：展示‘Agent 在围绕问题协作’的感觉最强。",use:"展厅化 Demo、高层汇报、产品宣传。",orbit:1,pos:{retrieve:[16,18],understand:[68,16],grounding:[76,50],plan:[58,71],execute:[22,67],review:[9,43],answer:[36,7]}}}
+    const state={v1:"execute",v2:"execute",v3:"review"}
+    const focus=new URLSearchParams(location.search).get("view")
+    const visible=focus&&P[focus]?[focus]:["v1","v2","v3"]
+    const refWrap=document.getElementById("refs");refWrap.innerHTML=refs.map(r=>`<div class="ref-item"><strong>${r[0]}</strong><span>${r[1]}</span><div class="links"><a class="link" href="${r[2]}" target="_blank" rel="noreferrer">Open reference</a></div></div>`).join("")
+    const tabs=document.getElementById("tabs");tabs.innerHTML=[["","All / 全部对比"],["v1","V1 指挥图谱板"],["v2","V2 阶段作战图"],["v3","V3 轨道指挥舱"]].map(([id,l])=>{const href=id?`?view=${id}`:"./index.html";const a=(focus||"")===id||(!focus&&!id)?" active":"";return `<a class="tab${a}" href="${href}">${l}</a>`}).join("")
+    function esc(v){return String(v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")}
+    function card(n,active,pos){return `<button class="node${n.id===active?" active":""}${n.status==="live"?" live":""}" data-node="${n.id}" style="left:${pos[0]}%;top:${pos[1]}%"><div class="node-head"><span class="node-k">${n.stage} · ${n.role}</span><span class="node-s ${n.status}">${n.status}</span></div><h3>${n.title}</h3><p>${n.summary}</p><div class="tagline"><span class="tag">${n.role}</span>${n.sem.entry!=="None"?`<span class="tag">${n.sem.entry}</span>`:""}${n.tools[0]?`<span class="tag">${n.tools[0]}</span>`:""}</div></button>`}
+    function path(pos,hot){const [x1,y1]=[pos[0][0]+12,pos[0][1]+8],[x2,y2]=[pos[1][0]+12,pos[1][1]+8],mx=(x1+x2)/2;return `<path class="${hot?"hot":""}" d="M ${x1}% ${y1}% C ${mx}% ${y1}%, ${mx}% ${y2}%, ${x2}% ${y2}%"/>`}
+    function inspect(id){const n=N[state[id]],s=n.sem;return `<div class="panel-title">Node Inspector / 节点检查器</div>
+      <div class="ibox"><strong>Node Summary / 节点摘要</strong><p>${n.summary}</p></div>
+      <details><summary>True Reasoning / 真正思考过程 <span>默认收起</span></summary><div class="fold"><pre>${esc(n.reason)}</pre></div></details>
+      <details open><summary>Semantic Binding / 语义绑定</summary><div class="fold"><div class="grid">
+        <div class="row"><b>entry_model</b><span>${s.entry}</span></div>
+        <div class="row"><b>supporting_models</b><span>${s.support.join(", ")||"None"}</span></div>
+        <div class="row"><b>dimensions</b><span>${s.dims.join(", ")||"None"}</span></div>
+        <div class="row"><b>metrics</b><span>${s.metrics.join(", ")||"None"}</span></div>
+        <div class="row"><b>entity_filters</b><span>${esc(JSON.stringify(s.ef))}</span></div>
+        <div class="row"><b>resolved_filters</b><span>${esc(JSON.stringify(s.rf))}</span></div>
+        <div class="row"><b>grain</b><span>${s.grain}</span></div>
+        <div class="row"><b>fallback</b><span>${s.fallback}</span></div>
+      </div></div></details>
+      <details><summary>Tools & SQL / 工具与 SQL</summary><div class="fold"><div class="chips">${(n.tools.length?n.tools:["No tool"]).map(t=>`<span class="chip">${t}</span>`).join("")}</div>${n.sql?`<pre class="sql">${esc(n.sql)}</pre>`:`<p style="margin:10px 0 0;color:var(--muted);font-size:12px">该节点没有直接 SQL，或 SQL 由后续阶段生成。</p>`}</div></details>
+      <details open><summary>Evidence & Review / 证据与审查</summary><div class="fold"><div class="ibox" style="margin:10px 0"><strong>Evidence</strong><div class="chips">${n.evidence.map(i=>`<span class="chip">${i}</span>`).join("")}</div></div><div class="ibox" style="margin:0"><strong>Review</strong><div class="chips">${n.review.map(i=>`<span class="chip">${i}</span>`).join("")}</div></div></div></details>`}
+    function renderMap(id){const p=P[id],active=state[id];if(p.orbit){return `<div class="mapbox"><div class="ring" style="width:420px;height:420px"></div><div class="ring" style="width:620px;height:620px"></div><div class="label" style="left:50%;top:6%;transform:translateX(-50%)">Answer Orbit</div><div class="label" style="left:12%;top:16%">Semantic</div><div class="label" style="right:10%;top:16%">Understanding</div><div class="label" style="right:6%;top:50%">Grounding</div><div class="label" style="left:18%;bottom:10%">Execution</div><div class="label" style="right:18%;bottom:12%">Plan</div><div class="label" style="left:5%;top:48%">Review</div><div class="orbit-center"><div><strong>链龙商贸</strong><span>查看税务风险指标预警<br/>Question-centered orchestration</span></div></div><svg class="connector" viewBox="0 0 100 100" preserveAspectRatio="none">${links.filter(([a,b])=>p.pos[a]&&p.pos[b]).map(([a,b])=>path([p.pos[a],p.pos[b]],a===active||b===active)).join("")}</svg>${Object.keys(p.pos).map(k=>card(N[k],active,p.pos[k])).join("")}</div>`}
+      return `<div class="mapbox">${p.bands.map(b=>`<div class="band" style="left:${b[0]}%;width:${b[1]}%"><span>${b[2]}</span></div>`).join("")}<svg class="connector" viewBox="0 0 100 100" preserveAspectRatio="none">${links.filter(([a,b])=>p.pos[a]&&p.pos[b]).map(([a,b])=>path([p.pos[a],p.pos[b]],a===active||b===active)).join("")}</svg>${Object.keys(p.pos).map(k=>card(N[k],active,p.pos[k])).join("")}</div>`}
+    function view(id){const p=P[id];return `<article class="card"><div class="proto-head"><div><div class="proto-kicker">${p.k}</div><h2 class="proto-title">${p.t}</h2><div class="proto-sub">${p.s}</div></div><div class="meta"><div class="meta-box"><strong>Visual Thesis</strong> ${p.th}</div><div class="meta-box"><strong>Best Use</strong> ${p.use}</div></div></div><div class="proto-body"><section class="map"><div class="panel-title">Graph Surface / 图形主画布</div>${renderMap(id)}</section><aside class="inspect">${inspect(id)}</aside></div><div class="foot"><span class="ft">节点可点击</span><span class="ft">真正思考过程默认折叠</span><span class="ft">语义模型 / tool / SQL / evidence 可见</span><span class="ft">贴合当前多阶段 Agent 架构</span></div></article>`}
+    function render(){document.getElementById("app").innerHTML=visible.map(view).join("");document.querySelectorAll("[data-node]").forEach(el=>el.onclick=()=>{const card=el.closest(".card"),id=card.querySelector(".proto-title").textContent.includes("Command")?"v1":card.querySelector(".proto-title").textContent.includes("Atlas")?"v2":"v3";state[id]=el.dataset.node;render()})}
+    render()
+  </script>
+</body>
+</html>

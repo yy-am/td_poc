@@ -11,6 +11,7 @@ from app.models.accounting import (
 )
 from app.models.reconciliation import (
     ReconRevenueComparison, ReconTaxBurdenAnalysis, ReconAdjustmentTracking, ReconCrossCheckResult,
+    ReconExportBookRevenueLine, ReconExportRefundTaxBasisLine, ReconExportContractDiscountLine,
 )
 from app.models.semantic import (
     SysSemanticModel, SysUserPreference, DictIndustry, DictTaxType,
@@ -25,6 +26,7 @@ __all__ = [
     "AcctChartOfAccounts", "AcctJournalEntry", "AcctJournalLine", "AcctGeneralLedger",
     "AcctIncomeStatement", "AcctBalanceSheet", "AcctTaxPayableDetail", "AcctDepreciationSchedule",
     "ReconRevenueComparison", "ReconTaxBurdenAnalysis", "ReconAdjustmentTracking", "ReconCrossCheckResult",
+    "ReconExportBookRevenueLine", "ReconExportRefundTaxBasisLine", "ReconExportContractDiscountLine",
     "SysSemanticModel", "SysUserPreference", "DictIndustry", "DictTaxType",
     "SysConversation", "SysConversationMessage",
 ]

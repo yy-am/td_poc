@@ -1,5 +1,19 @@
 # CLAUDE.md - 项目上下文与会话交接
 
+## 2026-03-31 Agent Flow / Validation Update
+
+- 新增根目录文档：`AGENT_FLOW_CURRENT.md`
+  - 可直接查看当前真实阶段、调用时序、大模型调用次数和改进建议
+- 本轮已落地两个关键改进：
+  - `TDA-MQL` 草拟阶段正式校验，失败会阻断在 `tda_mql_draft`
+  - 审查 / 汇总阶段不再默认通过或自动拼 fallback answer
+- 本轮新增或更新测试：
+  - `backend/tests/agent/test_reviewer_agent_v2.py`
+  - `backend/tests/agent/test_orchestrator.py`
+  - `backend/tests/agent/test_stage_graph_v1_lite_spec.py`
+- 当前最新后端回归结果：`57 passed, 1 warning`
+- 后续第三个改进点仍待实现：审查成本优化，建议走“规则先审，模型补审”
+
 ## 文档定位
 本文件给 Claude 类助手或其他新接手的 AI 使用，用来快速理解项目目标、恢复当前状态并继续推进实现。
 
@@ -218,6 +232,55 @@ Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5173
   - 尚未落地的占位目录
 - 本轮没有修改运行逻辑，属于文档沉淀工作，便于后续快速理解系统设计与代码边界。
 
+## 2026-03-30 Phase 1（TDA-MQL）新增进展
+
+### 新文档
+- `design/DESIGN_V2_MQL_STAGEGRAPH.md`
+- `design/PHASE1_TDA_MQL.md`
+- `DESIGN.md` 已加入 v2 入口说明
+
+### 新能力
+- 新增 `backend/app/semantic/mql.py`
+  - 提供 `TDA-MQL` 编译与执行入口
+  - 目前是语义底座能力，不在 orchestrator 主链里
+- `backend/app/api/semantic_v2.py`
+  - 新增 `POST /api/v1/semantic/mql/validate`
+  - 新增 `POST /api/v1/semantic/mql/query`
+- `backend/app/mcp/tools/registry_v2.py`
+  - 新增 `mql_query` tool
+- `backend/app/agent/executor_agent_v2.py`
+  - 已支持在显式 `tda_mql` 绑定时优先执行 `mql_query`
+  - 显式 `tda_mql` 不允许隐藏 fallback 到 `sql_executor`
+- 语义资产目录已扩展输出：
+  - `relationship_graph`
+  - `metric_lineage`
+  - `detail_fields`
+  - `materialization_policy`
+  - `query_hints`
+
+### 新增税务对账语义资产
+- `mart_revenue_timing_gap`
+- `mart_vat_payable_snapshot`
+- `mart_cit_adjustment_bridge`
+- 当前语义资产总数：`25`
+
+### 已验证
+- `tests/semantic/test_tda_mql.py` 通过
+- `tests/agent/test_executor_agent_v2.py` 通过
+- `tests/agent/test_runtime_context.py` 通过
+- `tests/agent/test_semantic_grounding.py` 通过
+- 合计 `20` 个测试通过
+
+### 尚未开始
+- Planner 稳定产出 `mql_query` 计划节点
+- StageGraph 改造
+- 人工审核断点
+- compare / attribution / Python 分析执行链
+
+### 接手提醒
+- 这轮用户特别强调：**不要写没让你做的 fallback 逻辑**
+- 当前 Phase 1 对不支持的 MQL 能力采用“显式报错”，不是偷偷回退到 SQL
+
 ## 2026-03-30 冗余文件清理补充
 
 ### 本轮完成
@@ -239,3 +302,341 @@ Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5173
 
 ### 尚未处理完
 - `backend-server-8000.log` 与 `frontend-server.log` 正被运行中的进程占用，暂未删除；不影响本轮代码清理
+
+## 2026-03-30 语义层升级补充（本轮）
+
+### 本轮完成
+- 语义层已从“少量 YAML 模型 + 旧 `semantic_binding.models`”升级为“分层语义资产 + semantic-first 执行”。
+- 新增主语义资产目录文件：`backend/app/mock/semantic_assets.py`，并将 seed 入口统一到 `semantic_seed.py`。
+- 新增 `compiler_v2.py / service_v3.py / catalog.py`，支持：
+  - 多源 `sources + joins`
+  - 表达式指标/维度
+  - 实体 resolver
+  - `entity_filters / resolved_filters / grain`
+- Agent 契约升级：
+  - `understanding_result` 新增 `semantic_scope` 与 `resolution_requirements`
+  - `semantic_binding` 新增 `entry_model / supporting_models / entity_filters / resolved_filters / fallback_policy`
+  - Executor 已实现 semantic-first 直接执行，失败时再做 repair / fallback。
+- 前端已同步到新契约：语义管理页按三层分类展示，聊天详情面板可直接显示语义绑定与解析过滤条件。
+
+### 本轮验证事实
+- 后端 `app.main` 导入成功。
+- PostgreSQL 仍正常，`/api/v1/health` 返回 `ok`。
+- 语义资产 seed 已成功写库，`sys_semantic_model` 当前总数 42；其中新增 22 条活动模型，旧模型归档保留。
+- 函数级验证：
+  - `mart_tax_risk_alert` 能通过 `enterprise_name -> taxpayer_id` 解析查询到 `鑫隆商贸有限公司` 风险预警。
+  - `mart_revenue_reconciliation` 能查询 `华兴科技有限公司` 2024Q3 三个月税会收入差异。
+- API 级验证：`/api/v1/semantic/query` 已返回 `resolved_filters` 与 `resolution_log`。
+- 前端 `npm run build` 通过。
+
+### 仍需注意
+- 当前常驻在 8000 的旧进程没有在本轮重启；如果要看浏览器真实 UI，需要先重启到本轮代码。
+- 本轮没有依赖外部 LLM 服务做真实聊天回放，因此“Semantic-first 聊天链路”属于代码已完成、函数/API 已验证、浏览器端待重启后联调。
+- `ExecutionAtlasPrototypeView.vue` 是未并入主链的原型文件，本轮通过 `tsconfig.app.json` 排除，避免阻塞主应用构建；不要误把它当成主链页面。
+
+### 下次最优先动作
+1. 重启后端到当前代码版本。
+2. 浏览器联调 `/chat` 与 `/semantic`。
+3. 用风险预警、收入对账两个问题做真实 UI 回归。
+4. 如果还有问题，先查 `semantic_binding` 和 `resolved_filters` 是否正确透出，再查执行层。
+
+## 2026-03-30 Phase 1 继续推进补充
+
+### 本轮完成
+- Planner 显式 MQL 绑定补强：
+  - `backend/app/agent/planner_agent_v2.py` 现在会在命中 `recommended_tool=mql_query` 的复合语义资产时，主动补齐
+    - `tool_hints=["mql_query"]`
+    - `semantic_binding.query_language="tda_mql"`
+    - `time_context`
+  - 同时避免默认把模型全部 metrics / dimensions 塞进 binding，优先保留用户问题里显式提到的字段
+- `backend/app/agent/prompts/planner_prompt_v3.py`
+  - 已同步要求 Planner 在语义层推荐 MQL 时直接产出 MQL 路径
+- `backend/app/agent/understanding_agent.py`
+  - 修复 fallback 场景下候选模型为空的兼容问题
+- 新增税务对账语义资产：
+  - `mart_cit_settlement_bridge`
+  - `mart_vat_declaration_diagnostics`
+  - `mart_depreciation_timing_difference`
+  - 当前语义资产总数已到 `28`
+- 新增/更新测试：
+  - `backend/tests/agent/test_planner_agent_v2.py`
+  - `backend/tests/semantic/test_tda_mql.py`
+- 文档已同步更新：
+  - `design/PHASE1_TDA_MQL.md`
+  - `design/DESIGN_V2_MQL_STAGEGRAPH.md`
+
+### 本轮验证事实
+- `Set-Location backend; .\.venv\Scripts\python.exe -m pytest`
+  - 共 `28` 个测试通过
+- 已确认新增 3 个语义资产能被 `SEMANTIC_MODEL_RECORDS` 正常加载
+
+### 仍未完成
+- 还没有用真实 LLM 主链观察 Planner 是否稳定每次都先产出 `mql_query` 计划节点
+- 还没有开始 StageGraph v0
+- compare / attribution / Python analysis 仍未实现
+
+### 接手提醒
+- 用户本轮再次强调：**不要写没让你做的兜底逻辑**
+- 当前 Phase 1 仍坚持：
+  - 未支持能力明确报错
+  - 不做隐式 SQL fallback
+- 下一步优先做真实问句回归 Planner/Executor 主链，再决定是否进入 StageGraph 实现
+
+## 2026-03-30 StageGraph v0 与真实回归补充
+
+### 本轮完成
+- `backend/app/llm/client.py`
+  - 新增仅针对 `APIConnectionError / APITimeoutError` 的瞬时重试
+  - 没有新增任何语义 fallback 或 SQL fallback
+- 在真实 LLM 回归后，继续补强了税务对账语义检索：
+  - `backend/app/agent/semantic_grounding.py`
+  - `backend/app/agent/runtime_context.py`
+  - `backend/app/mock/semantic_assets.py`
+  - 新增/补强 `汇算清缴桥接`、`增值税申报诊断` 等 alias 与领域词
+- `StageGraph v0` 已经落地：
+  - 新增 `backend/app/agent/stage_graph.py`
+  - `backend/app/agent/orchestrator.py` 已显式发出 `stage_update`
+  - `frontend/src/types/agent.ts`
+  - `frontend/src/components/chat/MultiAgentBoardClean.vue`
+  - `frontend/src/components/chat/AgentTimelineClean.vue`
+  - `frontend/src/components/chat/AgentDetailPanelClean.vue`
+  - 前端已支持阶段图与阶段事件展示
+- 新增测试：
+  - `backend/tests/llm/test_client.py`
+  - `backend/tests/agent/test_stage_graph.py`
+  - `backend/tests/agent/test_orchestrator.py`
+
+### 本轮验证事实
+- 真实 LLM 回归（改进后）：
+  - `backend-live-planner-regression-escalated-v2.json`
+  - 统计结果：`total_runs=6, llm_plan_runs=5, fallback_runs=1, mql_path_runs=5`
+  - 收入差异问句：`2/2` 命中 `mql_query`
+  - VAT 申报诊断：`2/2` 命中 `mql_query`
+  - CIT 汇缴桥接：`1/2` 命中 `mql_query`
+  - 剩余 1 次 miss 已定位为外部 `APIConnectionError`，不是语义路由偏差
+- `Set-Location backend; .\.venv\Scripts\python.exe -m pytest`
+  - 共 `37` 个测试通过，`1` 个既有 Pydantic warning
+- `Set-Location frontend; npm run build`
+  - 已通过
+  - 首次在沙箱内因环境级 `spawn EPERM` 失败
+  - 提权重跑后通过，因此不是业务代码错误
+
+### 当前最可信结论
+- 真实问句下，只要成功拿到 LLM 计划，Planner 已基本稳定走 MQL 主路径
+- `StageGraph v0` 已经进入主链路，且前端可见
+- 仍然没有加入用户未要求的隐藏兜底逻辑
+
+### 仍未完成
+- 还没有做浏览器真实 WebSocket 回归，确认 UI 中先显示 `StageGraph v0`、后显示真实 LLM `plan_graph`
+- 还没有进入 `StageGraph v1` 的人工审核断点、暂停/恢复、阶段持久化
+
+### 接手最优先动作
+1. 先看 `design/DESIGN_V2_MQL_STAGEGRAPH.md`
+2. 再看 `backend/app/agent/stage_graph.py` 与 `backend/app/agent/orchestrator.py`
+3. 用浏览器真实走一遍 `/chat`，确认阶段图与计划图切换正常
+
+## 2026-03-30 前端 StageGraph 视图对齐
+### 本轮完成
+- `frontend/src/components/chat/MultiAgentBoardClean.vue`
+  - 已把中间图切换到 `PlanFlowDeckClean.vue`
+- `frontend/src/components/chat/PlanFlowDeckClean.vue`
+  - 现在是前端主链路的中间图组件
+  - 在真实 `plan_graph` 出来前，优先展示 `StageGraph v0`
+  - 保留真实 LLM `plan_graph` 的展示能力
+- `design/agent-visual-prototypes/v7-right-inspector-bilingual.html`
+  - 已按当前 6 段阶段流更新关键视觉语义
+
+### 本轮验证事实
+- `Set-Location frontend; npm run build` 已通过
+- 本轮只涉及展示层和设计参考，不涉及执行逻辑改动
+- 没有新增任何隐藏 fallback 或隐式 SQL 降级
+
+### 下次最优先动作
+1. 浏览器真实联调 `/chat`
+2. 确认用户先看到 `StageGraph v0`，后看到真实 `plan_graph`
+3. 然后进入 `StageGraph v1` 的人工审核断点
+
+## 2026-03-31 服务重启与真实联调
+### 本轮已完成
+- 已重新启动前端与后端常驻服务：
+  - 前端 `http://127.0.0.1:5173`
+  - 聊天页 `http://127.0.0.1:5173/chat`
+  - 后端 `http://127.0.0.1:8000`
+- 修复 `PlannerAgent` 的 prompt 载荷构造：
+  - 新增 `_compact_understanding_result`
+  - 新增 `_compact_runtime_context_for_prompt`
+  - 新增 `_build_prompt_payload`
+  - 将 `planning_seed` 显式加入 Planner / Replan 输入
+- 新增测试 `test_build_prompt_payload_compacts_runtime_context_and_understanding`
+- 后端测试通过：`Set-Location backend; .\.venv\Scripts\python.exe -m pytest tests/agent/test_planner_agent_v2.py tests/agent/test_orchestrator.py -q`
+
+### 本轮真实验证
+- `GET http://127.0.0.1:8000/api/v1/health` 返回 PostgreSQL 正常
+- `GET http://127.0.0.1:5173` 返回 `200`
+- `GET http://127.0.0.1:5173/chat` 返回 `200`
+- 真实 WebSocket 回归（走 `5173 -> /ws -> 8000` 代理）已确认：
+  - 收到 `StageGraph v0` 阶段事件
+  - Planner 已成功生成真实计划，不再停在 `Planner 未能生成真实 LLM 计划`
+  - 执行链已进入 `Resolve Enterprise Identity` 与 `Query Revenue Reconciliation`
+  - `Query Revenue Reconciliation` 已命中 `mql_query`
+
+### 关键结论
+- 当前服务已经可以打开并看到最新一版 StageGraph 主链路效果
+- 本轮没有加入任何隐藏 fallback / 隐式 SQL 降级
+- 人工审核断点仍未开始做，符合当前用户要求
+
+## 2026-03-31 前端清新化改版方案
+### 本轮完成
+- 新增前端设计文档：`design/FRONTEND_STAGEGRAPH_REFRESH_V1.md`
+- 设计结论已明确：
+  - 整体风格从深色控制台切换为浅色、轻透、Gemini 风格分析工作台
+  - 中间主图不再使用线性阶段带作为主视觉
+  - 新方案改为 `Question Ribbon + Cognitive Workbench + Insight Inspector`
+  - 中间区域要突出“模型此刻在干什么”，而不是仅展示“第几步”
+
+### 当前状态
+- 这轮只完成设计方案，尚未开始前端重构代码
+
+## 2026-03-31 前端工作台换代已接入
+### 本轮完成
+- 聊天页入口已切到 `frontend/src/components/chat/MultiAgentBoardRefresh.vue`
+- 新增 `NavigatorRail.vue / WorkbenchCanvas.vue / InsightInspector.vue`
+- `ChatView.vue` 已完成浅色化，包含会话侧栏、欢迎区、输入区和消息容器
+- 中间主图已切为非线性工作台，不再以线性 stage ribbon 作为主视觉
+- 没有新增任何隐藏 fallback / SQL 自动降级 / 伪造状态
+
+### 验证
+- 前端构建通过：`Set-Location frontend; npm run build`
+
+## 2026-03-31 P0/P1 close-out
+
+### This round delivered
+- P0:
+  - single-turn planner -> `mql_query` main path kept stable under test
+  - no hidden fallback was added
+- P1:
+  - `TDA-MQL` compare support landed for `yoy / mom / qoq / previous_period`
+  - drill-down stays explicit and asset-driven via `detail_fields`
+  - runtime stage flow upgraded to `StageGraph v1-lite`
+  - frontend workbench can consume the richer stage model plus compare/drilldown metadata
+
+### Self-test status
+- Targeted backend tests passed:
+  - `backend/tests/semantic/test_tda_mql.py`
+  - `backend/tests/agent/test_stage_graph.py`
+  - `backend/tests/agent/test_stage_graph_v1_lite_spec.py`
+  - `backend/tests/agent/test_orchestrator.py`
+- Full backend suite passed:
+  - `43 passed, 1 warning`
+- Frontend build passed:
+  - first sandbox build hit `spawn EPERM`
+  - rerun outside sandbox passed
+
+### Important guardrails
+- Keep explicit failure for unsupported capabilities
+- Do not add hidden fallback or implicit SQL downgrade
+- Human gate and multi-turn remain deferred by user request
+
+### Cleanup note
+- Obsolete temporary `.new` files have been deleted.
+- The old unused chat workbench files replaced by the refresh workbench have been removed.
+
+## 2026-03-31 出口退税对账设计补充
+
+### 本轮完成
+- 新增 `design/EXPORT_REBATE_RECONCILIATION_V1.md`
+- 这份文档把“出口退税账面收入与税基金额对账”重构成更接近企业真实场景的语义资产设计，而不是继续停留在月度结果表
+- 设计明确了三张核心事实表：
+  - `fact_export_book_revenue_line`
+  - `fact_export_refund_tax_basis_line`
+  - `fact_export_contract_discount_line`
+- 其中第三张折扣事实表是关键新增，用来结构化记录合同折扣、折让、返利及其对账面 / 税基的影响
+- 已同步把入口写回：
+  - `design/DESIGN_V2_MQL_STAGEGRAPH.md`
+  - `design/PHASE1_TDA_MQL.md`
+  - `design/PROJECT_PROGRESS_V2.md`
+
+### 本轮没有做的事
+- 没有实现新的 SQLAlchemy 模型
+- 没有修改 mock 数据生成
+- 没有把新资产接入 `semantic_assets.py`
+- 没有运行 pytest / build
+
+### 接手时不要误判
+- 这轮是“设计已定”，不是“代码已完成”
+- 现有 `mart_revenue_reconciliation` 仍是运行中资产，但它不应被误认为出口退税场景的最终企业级设计
+- 后续实现时，应优先从三张事实表和折扣桥接开始，不要再先做新的月度结果表
+
+### 最优先恢复动作
+1. 阅读 `design/EXPORT_REBATE_RECONCILIATION_V1.md`
+2. 再读 `design/DESIGN_V2_MQL_STAGEGRAPH.md`
+3. 若要落地实现，顺序优先：
+   - ORM
+   - mock generator
+   - semantic assets
+   - regression tests
+
+## 2026-03-31 出口退税场景实现更新
+### 已完成
+- 设计已转为代码：
+  - 3 张底层事实表
+  - mock 单证链数据
+  - 5 个相关语义资产
+  - `TDA-MQL time_context.role` 支持多时间角色过滤
+- 明确遵守用户约束：不把这个场景写死成离线分析文件，而是保留前端提问后由现有 agent 链路动态完成分析
+
+### 已验证
+- `backend/tests/semantic/test_tda_mql.py`
+- `backend/tests/agent/test_semantic_grounding.py`
+- `backend/tests/agent/test_executor_agent_v2.py`
+- `backend/tests/agent/test_runtime_context.py`
+- 结果：`28 passed, 1 warning` + `7 passed`
+
+## 2026-03-31 出口退税语义入口修正
+### 已完成
+- 根据用户反馈修正语义入口：
+  - 首跳做出口退税对账
+  - 二跳查差异合同下的折扣记录
+  - 三跳才进入折扣传递支持分析
+- 已把 `mart_export_discount_bridge` 设为 `entry_enabled=false`
+- 已在 grounding 打分里加入非入口主题降权，避免普通对账问句首跳命中折扣支持主题
+- 已扩充 `fact_export_contract_discount_line` 的真实问法别名，支持“合同有没有折扣/是否有折扣单/折扣记录查询”
+
+### 已验证
+- `backend/tests/agent/test_semantic_grounding.py`
+- `backend/tests/semantic/test_tda_mql.py`
+- `backend/tests/agent/test_executor_agent_v2.py`
+- `backend/tests/agent/test_runtime_context.py`
+- 结果：`38 passed, 1 warning`
+
+### 下次恢复优先顺序
+1. 先看 `design/EXPORT_REBATE_RECONCILIATION_V1.md` 末尾新增的“首跳入口修正”
+2. 再看 `backend/app/mock/semantic_assets.py` 中 3 个出口退税相关资产
+3. 最后看 `backend/app/agent/semantic_grounding.py` 的 `_is_entry_enabled` 和 `_score_model`
+
+## 2026-03-31 出口退税数据已补入当前运行库
+### 已完成
+- 未走 `/api/v1/mock/generate` 全量清库重刷，而是定向向当前 PostgreSQL 库补入出口退税场景数据与语义模型。
+- 已验证写入结果：
+  - `recon_export_book_revenue_line` = 9
+  - `recon_export_refund_tax_basis_line` = 9
+  - `recon_export_contract_discount_line` = 4
+  - 新增 5 个出口退税相关 `sys_semantic_model`
+
+### 关键事实
+- 前端语义模型页只展示数据库 `sys_semantic_model` 中已有记录，不会直接读取代码里的 `SEMANTIC_MODEL_RECORDS`。
+- 因此“代码里已经有模型定义”并不代表前端立即可见，必须显式 seed 到当前运行库。
+
+### 额外修复
+- `generator.py` 中一条折扣样例的 `sync_status` 超过数据库字段长度，已改短以适配当前 PostgreSQL schema。
+
+## 2026-03-31 前端已显式展示阶段级 LLM 调用证据
+### 已完成
+- 针对“像写死流程、看不到大模型调用过程”的反馈，已补前端展示：
+  - `MultiAgentBoardRefresh.vue` 主界面直接显示当前阶段 LLM 调用证据卡片
+  - `NavigatorRail.vue` 阶段卡显示 `LLM xN`
+  - `InsightInspector.vue` 独立显示 `LLM Calls` 与 `Stage Reasoning`
+- 注意：展示的是可审计的阶段摘要与调用证据，不是模型私有逐字思维链。
+
+### 已验证
+- `npm run build`（frontend）通过。

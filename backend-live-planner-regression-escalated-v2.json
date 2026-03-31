@@ -1,0 +1,3846 @@
+{
+  "summary": {
+    "total_runs": 6,
+    "llm_plan_runs": 5,
+    "fallback_runs": 1,
+    "mql_path_runs": 5
+  },
+  "results": [
+    {
+      "query": "分析华兴科技 2024Q3 增值税申报收入与账面收入差异，先给我计划",
+      "repeat_index": 1,
+      "understanding": {
+        "query_mode": "analysis",
+        "intent_summary": "用户希望分析华兴科技在2024年第三季度增值税申报收入与会计账面收入之间的差异，并先获得分析计划。",
+        "business_goal": "分析华兴科技2024年第三季度增值税申报收入与账面收入的差异，并制定分析计划。",
+        "entities": {
+          "enterprise_names": [
+            "华兴科技"
+          ],
+          "taxpayer_ids": [
+            "91310000MA1FL8XX01"
+          ],
+          "tax_types": [
+            "增值税"
+          ],
+          "periods": [
+            "2024-Q3"
+          ]
+        },
+        "semantic_scope": {
+          "entity_models": [],
+          "atomic_models": [
+            "fact_vat_declaration",
+            "fact_income_statement"
+          ],
+          "composite_models": [
+            "mart_revenue_reconciliation",
+            "mart_revenue_timing_gap"
+          ]
+        },
+        "dimensions": [
+          "enterprise_name",
+          "period",
+          "industry_name",
+          "diff_explanation"
+        ],
+        "metrics": [
+          "vat_declared_revenue",
+          "acct_book_revenue",
+          "vat_vs_acct_diff",
+          "revenue_gap_amount",
+          "revenue_gap_rate"
+        ],
+        "comparisons": [
+          {
+            "left": "vat_declared_revenue",
+            "right": "acct_book_revenue",
+            "operator": "compare"
+          }
+        ],
+        "required_evidence": [
+          "增值税申报收入",
+          "账面收入",
+          "差异金额",
+          "差异率",
+          "差异说明"
+        ],
+        "resolution_requirements": [
+          "确认企业名称为'华兴科技'对应的唯一纳税人识别号"
+        ],
+        "candidate_models": [
+          "mart_revenue_reconciliation",
+          "mart_revenue_timing_gap",
+          "fact_vat_declaration",
+          "fact_income_statement"
+        ],
+        "ambiguities": [
+          "用户提到的'计划'具体指分析步骤、数据范围还是输出格式？"
+        ],
+        "confidence": "high"
+      },
+      "runtime_context_summary": {
+        "query_mode": "analysis",
+        "period_hints": {
+          "year": 2024,
+          "quarter": 3,
+          "periods": [
+            "2024-07",
+            "2024-08",
+            "2024-09",
+            "2024-Q3"
+          ]
+        },
+        "enterprise_candidates": [
+          {
+            "enterprise_name": "华兴科技有限公司",
+            "taxpayer_id": "91310000MA1FL8XX01"
+          }
+        ],
+        "relevant_models": [
+          {
+            "name": "mart_revenue_reconciliation",
+            "recommended_tool": "mql_query",
+            "semantic_kind": "composite_analysis",
+            "query_hints": {
+              "preferred_lane": "metric",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "企业收入对账",
+                "差异归因",
+                "税会口径比较"
+              ]
+            },
+            "metrics": [
+              "vat_declared_revenue",
+              "增值税申报收入",
+              "cit_declared_revenue",
+              "所得税申报收入",
+              "acct_book_revenue",
+              "账面收入",
+              "vat_vs_acct_diff",
+              "增值税与账面差异",
+              "cit_vs_acct_diff",
+              "所得税与账面差异",
+              "vat_vs_cit_diff",
+              "增值税与所得税差异",
+              "max_abs_diff",
+              "最大绝对差异"
+            ],
+            "dimensions": [
+              "period",
+              "期间",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称",
+              "diff_explanation",
+              "差异说明"
+            ]
+          },
+          {
+            "name": "mart_revenue_timing_gap",
+            "recommended_tool": "mql_query",
+            "semantic_kind": "composite_analysis",
+            "query_hints": {
+              "preferred_lane": "metric",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "时间性差异诊断",
+                "收入差异率分析",
+                "错期案例定位"
+              ]
+            },
+            "metrics": [
+              "vat_declared_revenue",
+              "申报收入",
+              "acct_book_revenue",
+              "账面收入",
+              "revenue_gap_amount",
+              "收入差异金额",
+              "vat_vs_acct_diff",
+              "revenue_gap_rate",
+              "收入差异率",
+              "timing_case_count",
+              "时间性差异笔数"
+            ],
+            "dimensions": [
+              "period",
+              "期间",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称",
+              "diff_explanation",
+              "差异说明"
+            ]
+          },
+          {
+            "name": "mart_vat_declaration_diagnostics",
+            "recommended_tool": "mql_query",
+            "semantic_kind": "composite_analysis",
+            "query_hints": {
+              "preferred_lane": "metric",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "申报税额诊断",
+                "进销项结构分析",
+                "免税销售占比查看"
+              ]
+            },
+            "metrics": [
+              "total_sales_amount",
+              "销售额合计",
+              "taxable_sales_amount",
+              "应税销售额",
+              "exempt_sales_amount",
+              "免税销售额",
+              "output_tax_amount",
+              "销项税额",
+              "input_tax_amount",
+              "进项税额",
+              "input_tax_transferred_out",
+              "进项税额转出",
+              "tax_payable",
+              "应纳税额",
+              "input_output_gap",
+              "进销项税额差",
+              "declaration_effective_rate",
+              "申报有效税负率",
+              "exempt_sales_ratio",
+              "免税销售额占比"
+            ],
+            "dimensions": [
+              "tax_period",
+              "税款所属期",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称",
+              "registration_type",
+              "纳税人类型"
+            ]
+          },
+          {
+            "name": "fact_vat_declaration",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "申报金额趋势",
+                "税负测算",
+                "企业申报对比"
+              ]
+            },
+            "metrics": [
+              "total_sales_amount",
+              "销售额合计",
+              "taxable_sales_amount",
+              "应税销售额",
+              "exempt_sales_amount",
+              "免税销售额",
+              "output_tax_amount",
+              "销项税额",
+              "input_tax_amount",
+              "进项税额",
+              "input_tax_transferred_out",
+              "进项税额转出",
+              "tax_payable",
+              "应纳税额"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "tax_period",
+              "税款所属期",
+              "enterprise_name",
+              "企业名称",
+              "industry_code",
+              "行业代码",
+              "industry_name",
+              "行业名称"
+            ]
+          },
+          {
+            "name": "mart_tax_burden_analysis",
+            "recommended_tool": "mql_query",
+            "semantic_kind": "composite_analysis",
+            "query_hints": {
+              "preferred_lane": "metric",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "税负偏离分析",
+                "行业税负对比",
+                "税负风险识别"
+              ]
+            },
+            "metrics": [
+              "vat_burden_rate",
+              "增值税税负率",
+              "cit_effective_rate",
+              "所得税有效税率",
+              "total_tax_burden",
+              "综合税负率",
+              "industry_avg_vat_burden",
+              "行业平均增值税税负率",
+              "industry_avg_cit_rate",
+              "行业平均所得税税率",
+              "deviation_vat",
+              "增值税税负偏离度",
+              "deviation_cit",
+              "所得税税负偏离度"
+            ],
+            "dimensions": [
+              "period",
+              "期间",
+              "enterprise_name",
+              "企业名称",
+              "industry_code",
+              "行业代码",
+              "industry_name",
+              "行业名称"
+            ]
+          },
+          {
+            "name": "fact_income_statement",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "利润趋势分析",
+                "收入成本对比",
+                "利润率分析"
+              ]
+            },
+            "metrics": [
+              "revenue_main",
+              "主营业务收入",
+              "revenue_other",
+              "其他业务收入",
+              "cost_main",
+              "主营业务成本",
+              "cost_other",
+              "其他业务成本",
+              "tax_surcharges",
+              "税金及附加",
+              "admin_expenses",
+              "管理费用",
+              "finance_expenses",
+              "财务费用",
+              "profit_total",
+              "利润总额",
+              "income_tax_expense",
+              "所得税费用",
+              "net_profit",
+              "净利润",
+              "book_revenue_total",
+              "账面收入合计"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "period",
+              "会计期间",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称"
+            ]
+          }
+        ]
+      },
+      "plan_source": "llm",
+      "reasoning": "用户要求分析华兴科技2024Q3增值税申报收入与账面收入差异，并先提供计划。理解层已识别出高置信度的业务目标和相关语义模型。我们将优先使用推荐的复合分析模型（mart_revenue_reconciliation）来获取核心差异数据，并辅以错期诊断模型进行深入分析。",
+      "validation_issues": [],
+      "business_nodes": [
+        {
+          "id": "n2",
+          "title": "解析企业实体",
+          "kind": "query",
+          "tool_hints": [
+            "mql_query"
+          ],
+          "entry_model": "dim_enterprise",
+          "supporting_models": [
+            "mart_revenue_timing_gap",
+            "fact_vat_declaration",
+            "fact_income_statement",
+            "mart_vat_declaration_diagnostics",
+            "mart_tax_burden_analysis"
+          ],
+          "metrics": [
+            "vat_declared_revenue",
+            "acct_book_revenue",
+            "vat_vs_acct_diff",
+            "revenue_gap_amount",
+            "revenue_gap_rate"
+          ],
+          "dimensions": [
+            "enterprise_name",
+            "taxpayer_id",
+            "period",
+            "industry_name",
+            "diff_explanation"
+          ],
+          "entity_filters": {
+            "enterprise_name": [
+              "华兴科技"
+            ]
+          },
+          "resolved_filters": {},
+          "query_language": "tda_mql",
+          "time_context": {
+            "grain": "month",
+            "range": "2024Q3"
+          }
+        },
+        {
+          "id": "n3",
+          "title": "查询收入对账核心数据",
+          "kind": "query",
+          "tool_hints": [
+            "mql_query"
+          ],
+          "entry_model": "mart_revenue_reconciliation",
+          "supporting_models": [
+            "dim_enterprise",
+            "mart_revenue_timing_gap",
+            "fact_vat_declaration",
+            "fact_income_statement",
+            "mart_vat_declaration_diagnostics",
+            "mart_tax_burden_analysis"
+          ],
+          "metrics": [
+            "vat_declared_revenue",
+            "acct_book_revenue",
+            "vat_vs_acct_diff",
+            "revenue_gap_amount",
+            "revenue_gap_rate"
+          ],
+          "dimensions": [
+            "period",
+            "enterprise_name",
+            "diff_explanation",
+            "industry_name"
+          ],
+          "entity_filters": {
+            "enterprise_name": [
+              "华兴科技"
+            ]
+          },
+          "resolved_filters": {},
+          "query_language": "tda_mql",
+          "time_context": {
+            "grain": "month",
+            "range": "2024Q3"
+          }
+        },
+        {
+          "id": "n4",
+          "title": "分析差异模式与归因",
+          "kind": "analysis",
+          "tool_hints": [
+            "mql_query"
+          ],
+          "entry_model": "mart_revenue_reconciliation",
+          "supporting_models": [
+            "mart_revenue_timing_gap",
+            "fact_vat_declaration",
+            "fact_income_statement",
+            "mart_vat_declaration_diagnostics",
+            "mart_tax_burden_analysis"
+          ],
+          "metrics": [
+            "vat_declared_revenue",
+            "acct_book_revenue",
+            "vat_vs_acct_diff",
+            "revenue_gap_amount",
+            "revenue_gap_rate"
+          ],
+          "dimensions": [
+            "enterprise_name",
+            "period",
+            "industry_name",
+            "diff_explanation"
+          ],
+          "entity_filters": {
+            "enterprise_name": [
+              "华兴科技",
+              "华兴科技有限公司"
+            ]
+          },
+          "resolved_filters": {},
+          "query_language": "tda_mql",
+          "time_context": {
+            "grain": "month",
+            "range": "2024Q3"
+          }
+        }
+      ],
+      "has_mql_path": true,
+      "full_plan": {
+        "title": "税账差异执行计划",
+        "summary": "明确用户需求：分析华兴科技在2024年第三季度（7-9月）的增值税申报收入与会计账面收入之间的差异。确定需要的数据包括：增值税申报收入、账面收入、差异金额、差异率及差异说明。",
+        "nodes": [
+          {
+            "id": "n1",
+            "title": "确认分析目标与范围",
+            "detail": "明确用户需求：分析华兴科技在2024年第三季度（7-9月）的增值税申报收入与会计账面收入之间的差异。确定需要的数据包括：增值税申报收入、账面收入、差异金额、差异率及差异说明。",
+            "status": "pending",
+            "kind": "goal",
+            "depends_on": [],
+            "tool_hints": [],
+            "done_when": "分析目标、企业实体、时间范围和所需指标已明确。",
+            "semantic_binding": {
+              "entry_model": "",
+              "supporting_models": [],
+              "metrics": [],
+              "dimensions": [],
+              "entity_filters": {},
+              "resolved_filters": {},
+              "grain": "",
+              "query_language": "",
+              "time_context": {},
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": []
+            }
+          },
+          {
+            "id": "n2",
+            "title": "解析企业实体",
+            "detail": "根据企业名称片段‘华兴科技’，从企业信息维度表中解析出准确的纳税人识别号（taxpayer_id），为后续查询提供实体过滤条件。",
+            "status": "pending",
+            "kind": "query",
+            "depends_on": [
+              "n1"
+            ],
+            "tool_hints": [
+              "mql_query"
+            ],
+            "done_when": "获得与‘华兴科技’匹配的唯一纳税人识别号。",
+            "semantic_binding": {
+              "entry_model": "dim_enterprise",
+              "supporting_models": [
+                "mart_revenue_timing_gap",
+                "fact_vat_declaration",
+                "fact_income_statement",
+                "mart_vat_declaration_diagnostics",
+                "mart_tax_burden_analysis"
+              ],
+              "metrics": [
+                "vat_declared_revenue",
+                "acct_book_revenue",
+                "vat_vs_acct_diff",
+                "revenue_gap_amount",
+                "revenue_gap_rate"
+              ],
+              "dimensions": [
+                "enterprise_name",
+                "taxpayer_id",
+                "period",
+                "industry_name",
+                "diff_explanation"
+              ],
+              "entity_filters": {
+                "enterprise_name": [
+                  "华兴科技"
+                ]
+              },
+              "resolved_filters": {},
+              "grain": "month",
+              "query_language": "tda_mql",
+              "time_context": {
+                "grain": "month",
+                "range": "2024Q3"
+              },
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": [
+                {
+                  "field": "period",
+                  "op": "in",
+                  "value": [
+                    "2024-07",
+                    "2024-08",
+                    "2024-09",
+                    "2024-Q3"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "n3",
+            "title": "查询收入对账核心数据",
+            "detail": "使用收入对账主题模型（mart_revenue_reconciliation），查询华兴科技在2024Q3各月的增值税申报收入、账面收入、差异金额及差异说明。该模型直接匹配用户的分析意图，且推荐使用MQL查询。",
+            "status": "pending",
+            "kind": "query",
+            "depends_on": [
+              "n2"
+            ],
+            "tool_hints": [
+              "mql_query"
+            ],
+            "done_when": "成功获取2024年7、8、9月各月的收入对比数据及差异说明。",
+            "semantic_binding": {
+              "entry_model": "mart_revenue_reconciliation",
+              "supporting_models": [
+                "dim_enterprise",
+                "mart_revenue_timing_gap",
+                "fact_vat_declaration",
+                "fact_income_statement",
+                "mart_vat_declaration_diagnostics",
+                "mart_tax_burden_analysis"
+              ],
+              "metrics": [
+                "vat_declared_revenue",
+                "acct_book_revenue",
+                "vat_vs_acct_diff",
+                "revenue_gap_amount",
+                "revenue_gap_rate"
+              ],
+              "dimensions": [
+                "period",
+                "enterprise_name",
+                "diff_explanation",
+                "industry_name"
+              ],
+              "entity_filters": {
+                "enterprise_name": [
+                  "华兴科技"
+                ]
+              },
+              "resolved_filters": {},
+              "grain": "month",
+              "query_language": "tda_mql",
+              "time_context": {
+                "grain": "month",
+                "range": "2024Q3"
+              },
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": [
+                {
+                  "field": "period",
+                  "op": "in",
+                  "value": [
+                    "2024-07",
+                    "2024-08",
+                    "2024-09",
+                    "2024-Q3"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "n4",
+            "title": "分析差异模式与归因",
+            "detail": "基于查询到的数据，分析差异的月度趋势、绝对金额和相对比例。结合‘差异说明’字段，识别主要差异原因（如时间性差异、口径差异等），并进行初步归因。",
+            "status": "pending",
+            "kind": "analysis",
+            "depends_on": [
+              "n3"
+            ],
+            "tool_hints": [
+              "mql_query"
+            ],
+            "done_when": "形成对差异金额、差异率及主要归因的初步分析结论。",
+            "semantic_binding": {
+              "entry_model": "mart_revenue_reconciliation",
+              "supporting_models": [
+                "mart_revenue_timing_gap",
+                "fact_vat_declaration",
+                "fact_income_statement",
+                "mart_vat_declaration_diagnostics",
+                "mart_tax_burden_analysis"
+              ],
+              "metrics": [
+                "vat_declared_revenue",
+                "acct_book_revenue",
+                "vat_vs_acct_diff",
+                "revenue_gap_amount",
+                "revenue_gap_rate"
+              ],
+              "dimensions": [
+                "enterprise_name",
+                "period",
+                "industry_name",
+                "diff_explanation"
+              ],
+              "entity_filters": {
+                "enterprise_name": [
+                  "华兴科技",
+                  "华兴科技有限公司"
+                ]
+              },
+              "resolved_filters": {},
+              "grain": "month",
+              "query_language": "tda_mql",
+              "time_context": {
+                "grain": "month",
+                "range": "2024Q3"
+              },
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": [
+                {
+                  "field": "period",
+                  "op": "in",
+                  "value": [
+                    "2024-07",
+                    "2024-08",
+                    "2024-09",
+                    "2024-Q3"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "n5",
+            "title": "制定并呈现分析计划",
+            "detail": "根据以上步骤和初步发现，为用户制定一份清晰的分析计划，概述后续将执行的步骤、使用的数据源、预期的分析维度和输出形式。",
+            "status": "pending",
+            "kind": "answer",
+            "depends_on": [
+              "n1",
+              "n4"
+            ],
+            "tool_hints": [],
+            "done_when": "生成并向用户展示分析计划。",
+            "semantic_binding": {
+              "entry_model": "",
+              "supporting_models": [],
+              "metrics": [],
+              "dimensions": [],
+              "entity_filters": {},
+              "resolved_filters": {},
+              "grain": "",
+              "query_language": "",
+              "time_context": {},
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": []
+            }
+          }
+        ],
+        "edges": [
+          {
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "source": "n1",
+            "target": "n5"
+          },
+          {
+            "source": "n4",
+            "target": "n5"
+          }
+        ],
+        "active_node_ids": [
+          "n1"
+        ],
+        "change_reason": "",
+        "source": "llm"
+      }
+    },
+    {
+      "query": "分析华兴科技 2024Q3 增值税申报收入与账面收入差异，先给我计划",
+      "repeat_index": 2,
+      "understanding": {
+        "query_mode": "analysis",
+        "intent_summary": "用户希望分析华兴科技在2024年第三季度增值税申报收入与会计账面收入之间的差异，并获取分析计划。",
+        "business_goal": "分析华兴科技2024年第三季度增值税申报收入与账面收入的差异，并提供分析计划。",
+        "entities": {
+          "enterprise_names": [
+            "华兴科技"
+          ],
+          "taxpayer_ids": [
+            "91310000MA1FL8XX01"
+          ],
+          "tax_types": [
+            "增值税"
+          ],
+          "periods": [
+            "2024-Q3"
+          ]
+        },
+        "semantic_scope": {
+          "entity_models": [],
+          "atomic_models": [
+            "fact_vat_declaration",
+            "fact_income_statement"
+          ],
+          "composite_models": [
+            "mart_revenue_reconciliation",
+            "mart_revenue_timing_gap"
+          ]
+        },
+        "dimensions": [
+          "enterprise_name",
+          "period",
+          "industry_name",
+          "diff_explanation"
+        ],
+        "metrics": [
+          "vat_declared_revenue",
+          "acct_book_revenue",
+          "vat_vs_acct_diff",
+          "revenue_gap_amount",
+          "revenue_gap_rate"
+        ],
+        "comparisons": [
+          {
+            "left": "vat_declared_revenue",
+            "right": "acct_book_revenue",
+            "operator": "compare"
+          }
+        ],
+        "required_evidence": [
+          "增值税申报收入",
+          "账面收入",
+          "差异金额",
+          "差异率",
+          "差异说明"
+        ],
+        "resolution_requirements": [
+          "确认企业名称为'华兴科技'对应的唯一纳税人识别号"
+        ],
+        "candidate_models": [
+          "mart_revenue_reconciliation",
+          "mart_revenue_timing_gap",
+          "fact_vat_declaration",
+          "fact_income_statement"
+        ],
+        "ambiguities": [
+          "用户提到的'计划'具体指分析步骤、时间安排还是输出格式？"
+        ],
+        "confidence": "high"
+      },
+      "runtime_context_summary": {
+        "query_mode": "analysis",
+        "period_hints": {
+          "year": 2024,
+          "quarter": 3,
+          "periods": [
+            "2024-07",
+            "2024-08",
+            "2024-09",
+            "2024-Q3"
+          ]
+        },
+        "enterprise_candidates": [
+          {
+            "enterprise_name": "华兴科技有限公司",
+            "taxpayer_id": "91310000MA1FL8XX01"
+          }
+        ],
+        "relevant_models": [
+          {
+            "name": "mart_revenue_reconciliation",
+            "recommended_tool": "mql_query",
+            "semantic_kind": "composite_analysis",
+            "query_hints": {
+              "preferred_lane": "metric",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "企业收入对账",
+                "差异归因",
+                "税会口径比较"
+              ]
+            },
+            "metrics": [
+              "vat_declared_revenue",
+              "增值税申报收入",
+              "cit_declared_revenue",
+              "所得税申报收入",
+              "acct_book_revenue",
+              "账面收入",
+              "vat_vs_acct_diff",
+              "增值税与账面差异",
+              "cit_vs_acct_diff",
+              "所得税与账面差异",
+              "vat_vs_cit_diff",
+              "增值税与所得税差异",
+              "max_abs_diff",
+              "最大绝对差异"
+            ],
+            "dimensions": [
+              "period",
+              "期间",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称",
+              "diff_explanation",
+              "差异说明"
+            ]
+          },
+          {
+            "name": "mart_revenue_timing_gap",
+            "recommended_tool": "mql_query",
+            "semantic_kind": "composite_analysis",
+            "query_hints": {
+              "preferred_lane": "metric",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "时间性差异诊断",
+                "收入差异率分析",
+                "错期案例定位"
+              ]
+            },
+            "metrics": [
+              "vat_declared_revenue",
+              "申报收入",
+              "acct_book_revenue",
+              "账面收入",
+              "revenue_gap_amount",
+              "收入差异金额",
+              "vat_vs_acct_diff",
+              "revenue_gap_rate",
+              "收入差异率",
+              "timing_case_count",
+              "时间性差异笔数"
+            ],
+            "dimensions": [
+              "period",
+              "期间",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称",
+              "diff_explanation",
+              "差异说明"
+            ]
+          },
+          {
+            "name": "mart_vat_declaration_diagnostics",
+            "recommended_tool": "mql_query",
+            "semantic_kind": "composite_analysis",
+            "query_hints": {
+              "preferred_lane": "metric",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "申报税额诊断",
+                "进销项结构分析",
+                "免税销售占比查看"
+              ]
+            },
+            "metrics": [
+              "total_sales_amount",
+              "销售额合计",
+              "taxable_sales_amount",
+              "应税销售额",
+              "exempt_sales_amount",
+              "免税销售额",
+              "output_tax_amount",
+              "销项税额",
+              "input_tax_amount",
+              "进项税额",
+              "input_tax_transferred_out",
+              "进项税额转出",
+              "tax_payable",
+              "应纳税额",
+              "input_output_gap",
+              "进销项税额差",
+              "declaration_effective_rate",
+              "申报有效税负率",
+              "exempt_sales_ratio",
+              "免税销售额占比"
+            ],
+            "dimensions": [
+              "tax_period",
+              "税款所属期",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称",
+              "registration_type",
+              "纳税人类型"
+            ]
+          },
+          {
+            "name": "fact_vat_declaration",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "申报金额趋势",
+                "税负测算",
+                "企业申报对比"
+              ]
+            },
+            "metrics": [
+              "total_sales_amount",
+              "销售额合计",
+              "taxable_sales_amount",
+              "应税销售额",
+              "exempt_sales_amount",
+              "免税销售额",
+              "output_tax_amount",
+              "销项税额",
+              "input_tax_amount",
+              "进项税额",
+              "input_tax_transferred_out",
+              "进项税额转出",
+              "tax_payable",
+              "应纳税额"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "tax_period",
+              "税款所属期",
+              "enterprise_name",
+              "企业名称",
+              "industry_code",
+              "行业代码",
+              "industry_name",
+              "行业名称"
+            ]
+          },
+          {
+            "name": "mart_tax_burden_analysis",
+            "recommended_tool": "mql_query",
+            "semantic_kind": "composite_analysis",
+            "query_hints": {
+              "preferred_lane": "metric",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "税负偏离分析",
+                "行业税负对比",
+                "税负风险识别"
+              ]
+            },
+            "metrics": [
+              "vat_burden_rate",
+              "增值税税负率",
+              "cit_effective_rate",
+              "所得税有效税率",
+              "total_tax_burden",
+              "综合税负率",
+              "industry_avg_vat_burden",
+              "行业平均增值税税负率",
+              "industry_avg_cit_rate",
+              "行业平均所得税税率",
+              "deviation_vat",
+              "增值税税负偏离度",
+              "deviation_cit",
+              "所得税税负偏离度"
+            ],
+            "dimensions": [
+              "period",
+              "期间",
+              "enterprise_name",
+              "企业名称",
+              "industry_code",
+              "行业代码",
+              "industry_name",
+              "行业名称"
+            ]
+          },
+          {
+            "name": "fact_income_statement",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "利润趋势分析",
+                "收入成本对比",
+                "利润率分析"
+              ]
+            },
+            "metrics": [
+              "revenue_main",
+              "主营业务收入",
+              "revenue_other",
+              "其他业务收入",
+              "cost_main",
+              "主营业务成本",
+              "cost_other",
+              "其他业务成本",
+              "tax_surcharges",
+              "税金及附加",
+              "admin_expenses",
+              "管理费用",
+              "finance_expenses",
+              "财务费用",
+              "profit_total",
+              "利润总额",
+              "income_tax_expense",
+              "所得税费用",
+              "net_profit",
+              "净利润",
+              "book_revenue_total",
+              "账面收入合计"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "period",
+              "会计期间",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称"
+            ]
+          }
+        ]
+      },
+      "plan_source": "llm",
+      "reasoning": "用户要求分析华兴科技2024Q3增值税申报收入与账面收入差异，并先提供计划。理解层已识别出高置信度的业务意图和匹配的语义模型。我们将优先使用推荐的复合分析模型 `mart_revenue_reconciliation` 来获取核心差异数据，因为它直接包含所需指标和差异说明。",
+      "validation_issues": [],
+      "business_nodes": [
+        {
+          "id": "n2",
+          "title": "查询收入对账核心数据",
+          "kind": "query",
+          "tool_hints": [
+            "mql_query"
+          ],
+          "entry_model": "mart_revenue_reconciliation",
+          "supporting_models": [
+            "dim_enterprise",
+            "mart_revenue_timing_gap",
+            "fact_vat_declaration",
+            "fact_income_statement",
+            "mart_vat_declaration_diagnostics",
+            "mart_tax_burden_analysis"
+          ],
+          "metrics": [
+            "vat_declared_revenue",
+            "acct_book_revenue",
+            "vat_vs_acct_diff",
+            "revenue_gap_amount",
+            "revenue_gap_rate"
+          ],
+          "dimensions": [
+            "period",
+            "enterprise_name",
+            "diff_explanation",
+            "industry_name"
+          ],
+          "entity_filters": {
+            "enterprise_name": [
+              "华兴科技"
+            ]
+          },
+          "resolved_filters": {
+            "taxpayer_id": [
+              "91310000MA1FL8XX01"
+            ]
+          },
+          "query_language": "tda_mql",
+          "time_context": {
+            "grain": "quarter",
+            "range": "2024Q3"
+          }
+        },
+        {
+          "id": "n3",
+          "title": "计算差异率与汇总分析",
+          "kind": "analysis",
+          "tool_hints": [
+            "mql_query"
+          ],
+          "entry_model": "mart_revenue_reconciliation",
+          "supporting_models": [
+            "mart_revenue_timing_gap",
+            "fact_vat_declaration",
+            "fact_income_statement",
+            "mart_vat_declaration_diagnostics",
+            "mart_tax_burden_analysis"
+          ],
+          "metrics": [
+            "vat_declared_revenue",
+            "acct_book_revenue",
+            "vat_vs_acct_diff",
+            "revenue_gap_amount",
+            "revenue_gap_rate"
+          ],
+          "dimensions": [
+            "enterprise_name",
+            "period",
+            "industry_name",
+            "diff_explanation"
+          ],
+          "entity_filters": {
+            "enterprise_name": [
+              "华兴科技",
+              "华兴科技有限公司"
+            ]
+          },
+          "resolved_filters": {},
+          "query_language": "tda_mql",
+          "time_context": {
+            "grain": "month",
+            "range": "2024Q3"
+          }
+        }
+      ],
+      "has_mql_path": true,
+      "full_plan": {
+        "title": "税账差异执行计划",
+        "summary": "确认用户需求是分析华兴科技在2024年第三季度增值税申报收入与会计账面收入的差异，并制定分析计划。",
+        "nodes": [
+          {
+            "id": "n1",
+            "title": "明确分析目标与范围",
+            "detail": "确认用户需求是分析华兴科技在2024年第三季度增值税申报收入与会计账面收入的差异，并制定分析计划。",
+            "status": "pending",
+            "kind": "goal",
+            "depends_on": [],
+            "tool_hints": [],
+            "done_when": "业务目标、企业实体、时间范围和核心指标（申报收入、账面收入、差异）已明确。",
+            "semantic_binding": {
+              "entry_model": "",
+              "supporting_models": [],
+              "metrics": [],
+              "dimensions": [],
+              "entity_filters": {},
+              "resolved_filters": {},
+              "grain": "",
+              "query_language": "",
+              "time_context": {},
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": []
+            }
+          },
+          {
+            "id": "n2",
+            "title": "查询收入对账核心数据",
+            "detail": "使用收入对账主题模型，查询华兴科技在2024Q3各月的增值税申报收入、账面收入、差异金额及差异说明。",
+            "status": "pending",
+            "kind": "query",
+            "depends_on": [
+              "n1"
+            ],
+            "tool_hints": [
+              "mql_query"
+            ],
+            "done_when": "成功获取指定企业和期间的核心收入与差异数据。",
+            "semantic_binding": {
+              "entry_model": "mart_revenue_reconciliation",
+              "supporting_models": [
+                "dim_enterprise",
+                "mart_revenue_timing_gap",
+                "fact_vat_declaration",
+                "fact_income_statement",
+                "mart_vat_declaration_diagnostics",
+                "mart_tax_burden_analysis"
+              ],
+              "metrics": [
+                "vat_declared_revenue",
+                "acct_book_revenue",
+                "vat_vs_acct_diff",
+                "revenue_gap_amount",
+                "revenue_gap_rate"
+              ],
+              "dimensions": [
+                "period",
+                "enterprise_name",
+                "diff_explanation",
+                "industry_name"
+              ],
+              "entity_filters": {
+                "enterprise_name": [
+                  "华兴科技"
+                ]
+              },
+              "resolved_filters": {
+                "taxpayer_id": [
+                  "91310000MA1FL8XX01"
+                ]
+              },
+              "grain": "month",
+              "query_language": "tda_mql",
+              "time_context": {
+                "grain": "quarter",
+                "range": "2024Q3"
+              },
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": [
+                {
+                  "field": "period",
+                  "op": "in",
+                  "value": [
+                    "2024-07",
+                    "2024-08",
+                    "2024-09",
+                    "2024-Q3"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "n3",
+            "title": "计算差异率与汇总分析",
+            "detail": "基于查询结果，计算季度汇总差异、差异率，并识别主要差异原因（如时间性差异、口径差异）。",
+            "status": "pending",
+            "kind": "analysis",
+            "depends_on": [
+              "n2"
+            ],
+            "tool_hints": [
+              "mql_query"
+            ],
+            "done_when": "完成差异金额、差异率的计算，并对差异原因进行初步归类和总结。",
+            "semantic_binding": {
+              "entry_model": "mart_revenue_reconciliation",
+              "supporting_models": [
+                "mart_revenue_timing_gap",
+                "fact_vat_declaration",
+                "fact_income_statement",
+                "mart_vat_declaration_diagnostics",
+                "mart_tax_burden_analysis"
+              ],
+              "metrics": [
+                "vat_declared_revenue",
+                "acct_book_revenue",
+                "vat_vs_acct_diff",
+                "revenue_gap_amount",
+                "revenue_gap_rate"
+              ],
+              "dimensions": [
+                "enterprise_name",
+                "period",
+                "industry_name",
+                "diff_explanation"
+              ],
+              "entity_filters": {
+                "enterprise_name": [
+                  "华兴科技",
+                  "华兴科技有限公司"
+                ]
+              },
+              "resolved_filters": {},
+              "grain": "month",
+              "query_language": "tda_mql",
+              "time_context": {
+                "grain": "month",
+                "range": "2024Q3"
+              },
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": [
+                {
+                  "field": "period",
+                  "op": "in",
+                  "value": [
+                    "2024-07",
+                    "2024-08",
+                    "2024-09",
+                    "2024-Q3"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "n4",
+            "title": "制定并呈现分析计划",
+            "detail": "根据数据和分析结果，为用户生成一份清晰的分析计划，包括分析步骤、时间安排和预期输出。",
+            "status": "pending",
+            "kind": "answer",
+            "depends_on": [
+              "n3"
+            ],
+            "tool_hints": [],
+            "done_when": "生成包含分析目标、数据来源、分析步骤、时间线和交付物的计划文档。",
+            "semantic_binding": {
+              "entry_model": "",
+              "supporting_models": [],
+              "metrics": [],
+              "dimensions": [],
+              "entity_filters": {},
+              "resolved_filters": {},
+              "grain": "",
+              "query_language": "",
+              "time_context": {},
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": []
+            }
+          }
+        ],
+        "edges": [
+          {
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "source": "n3",
+            "target": "n4"
+          }
+        ],
+        "active_node_ids": [
+          "n1"
+        ],
+        "change_reason": "",
+        "source": "llm"
+      }
+    },
+    {
+      "query": "查看华兴科技 2024 年所得税汇算清缴桥接，重点看应纳税所得额和应补退税额，先给我计划",
+      "repeat_index": 1,
+      "understanding": {
+        "query_mode": "reconciliation",
+        "intent_summary": "用户希望查看华兴科技2024年所得税汇算清缴的桥接分析，重点关注应纳税所得额和应补退税额，并先获取分析计划。",
+        "business_goal": "分析华兴科技2024年所得税汇算清缴中，从会计利润到应纳税所得额的调整过程，并明确最终的应补退税额。",
+        "entities": {
+          "enterprise_names": [
+            "华兴科技"
+          ],
+          "taxpayer_ids": [
+            "91310000MA1FL8XX01"
+          ],
+          "tax_types": [
+            "企业所得税"
+          ],
+          "periods": [
+            "2024"
+          ]
+        },
+        "semantic_scope": {
+          "entity_models": [],
+          "atomic_models": [
+            "fact_cit_annual"
+          ],
+          "composite_models": [
+            "mart_cit_settlement_bridge"
+          ]
+        },
+        "dimensions": [
+          "enterprise_name",
+          "tax_year",
+          "industry_name",
+          "registration_type"
+        ],
+        "metrics": [
+          "accounting_profit",
+          "tax_adjustments_increase",
+          "tax_adjustments_decrease",
+          "taxable_income",
+          "tax_amount"
+        ],
+        "comparisons": [
+          {
+            "left": "accounting_profit",
+            "right": "taxable_income",
+            "operator": "compare"
+          }
+        ],
+        "required_evidence": [
+          "会计利润",
+          "纳税调增",
+          "纳税调减",
+          "应纳税所得额",
+          "应纳所得税额",
+          "已预缴税额",
+          "应补退税额"
+        ],
+        "resolution_requirements": [
+          "确认企业全称与纳税人识别号的对应关系"
+        ],
+        "candidate_models": [
+          "mart_cit_settlement_bridge",
+          "fact_cit_annual"
+        ],
+        "ambiguities": [
+          "用户提到的'应补退税额'在候选模型中未明确列出为指标，需要确认其数据来源或计算逻辑。"
+        ],
+        "confidence": "high"
+      },
+      "runtime_context_summary": {
+        "query_mode": "reconciliation",
+        "period_hints": {
+          "year": 2024,
+          "quarter": null,
+          "periods": [
+            "2024"
+          ]
+        },
+        "enterprise_candidates": [
+          {
+            "enterprise_name": "华兴科技有限公司",
+            "taxpayer_id": "91310000MA1FL8XX01"
+          }
+        ],
+        "relevant_models": [
+          {
+            "name": "mart_cit_settlement_bridge",
+            "recommended_tool": "mql_query",
+            "semantic_kind": "composite_analysis",
+            "query_hints": {
+              "preferred_lane": "metric",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "所得税汇缴桥接分析",
+                "会计利润到所得额桥接",
+                "汇缴差额定位"
+              ]
+            },
+            "metrics": [
+              "accounting_profit",
+              "会计利润",
+              "tax_adjustments_increase",
+              "纳税调增",
+              "tax_adjustments_decrease",
+              "纳税调减",
+              "taxable_income",
+              "应纳税所得额",
+              "tax_amount",
+              "应纳所得税额",
+              "tax_prepaid",
+              "已预缴税额",
+              "tax_refund_or_due",
+              "应补退税额",
+              "net_tax_adjustment",
+              "纳税调整净额",
+              "effective_tax_rate",
+              "有效所得税率",
+              "settlement_gap",
+              "汇缴差异额"
+            ],
+            "dimensions": [
+              "tax_year",
+              "纳税年度",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称",
+              "registration_type",
+              "纳税人类型"
+            ]
+          },
+          {
+            "name": "fact_cit_annual",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "年度汇算分析",
+                "税会差异分析",
+                "补退税分析"
+              ]
+            },
+            "metrics": [
+              "accounting_profit",
+              "会计利润",
+              "tax_adjustments_increase",
+              "纳税调增",
+              "tax_adjustments_decrease",
+              "纳税调减",
+              "taxable_income",
+              "应纳税所得额",
+              "tax_amount",
+              "应纳所得税额",
+              "tax_prepaid",
+              "已预缴税额",
+              "tax_refund_or_due",
+              "应退补税额"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "tax_year",
+              "纳税年度",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称"
+            ]
+          },
+          {
+            "name": "fact_cit_quarterly",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "季度利润分析",
+                "季度预缴分析",
+                "所得税口径对比"
+              ]
+            },
+            "metrics": [
+              "revenue_total",
+              "营业收入",
+              "cost_total",
+              "营业成本",
+              "profit_total",
+              "利润总额",
+              "taxable_income",
+              "应纳税所得额",
+              "tax_payable",
+              "应纳所得税额",
+              "tax_prepaid",
+              "已预缴税额"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "tax_year",
+              "纳税年度",
+              "quarter",
+              "季度",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称"
+            ]
+          },
+          {
+            "name": "fact_income_statement",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "利润趋势分析",
+                "收入成本对比",
+                "利润率分析"
+              ]
+            },
+            "metrics": [
+              "revenue_main",
+              "主营业务收入",
+              "revenue_other",
+              "其他业务收入",
+              "cost_main",
+              "主营业务成本",
+              "cost_other",
+              "其他业务成本",
+              "tax_surcharges",
+              "税金及附加",
+              "admin_expenses",
+              "管理费用",
+              "finance_expenses",
+              "财务费用",
+              "profit_total",
+              "利润总额",
+              "income_tax_expense",
+              "所得税费用",
+              "net_profit",
+              "净利润",
+              "book_revenue_total",
+              "账面收入合计"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "period",
+              "会计期间",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称"
+            ]
+          },
+          {
+            "name": "dim_industry",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "entity_dimension",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "行业映射",
+                "行业基准对比"
+              ]
+            },
+            "metrics": [
+              "avg_vat_burden",
+              "行业平均增值税税负率",
+              "avg_cit_rate",
+              "行业平均所得税税率"
+            ],
+            "dimensions": [
+              "industry_code",
+              "行业代码",
+              "industry_name",
+              "行业名称",
+              "parent_code",
+              "上级行业代码"
+            ]
+          },
+          {
+            "name": "fact_other_tax_declaration",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "税种分布分析",
+                "税种趋势分析"
+              ]
+            },
+            "metrics": [
+              "tax_basis",
+              "计税依据",
+              "tax_rate",
+              "税率",
+              "tax_amount",
+              "应纳税额"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "tax_period",
+              "税款所属期",
+              "tax_type",
+              "税种",
+              "enterprise_name",
+              "企业名称"
+            ]
+          }
+        ]
+      },
+      "plan_source": "fallback",
+      "reasoning": "规划失败，使用保底路径。",
+      "validation_issues": [
+        "当前问题已有可用语义模型，但计划未显式绑定 semantic_binding。"
+      ],
+      "business_nodes": [
+        {
+          "id": "n3",
+          "title": "提取税务数据数据",
+          "kind": "query",
+          "tool_hints": [
+            "semantic_query",
+            "sql_executor"
+          ],
+          "entry_model": null,
+          "supporting_models": null,
+          "metrics": null,
+          "dimensions": null,
+          "entity_filters": null,
+          "resolved_filters": null,
+          "query_language": null,
+          "time_context": null
+        }
+      ],
+      "has_mql_path": false,
+      "full_plan": {
+        "title": "税务数据执行计划",
+        "summary": "规划调用失败，暂时使用保底路径继续执行。",
+        "nodes": [
+          {
+            "id": "n1",
+            "title": "澄清税务数据目标",
+            "detail": "确认问题关注的主体、期间、指标和输出形式。",
+            "status": "completed",
+            "kind": "goal",
+            "depends_on": [],
+            "tool_hints": [],
+            "done_when": "已明确查询范围和结果口径。"
+          },
+          {
+            "id": "n2",
+            "title": "核对税务数据口径",
+            "detail": "如字段或表不明确，先查看结构；否则直接进入取数。",
+            "status": "in_progress",
+            "kind": "schema",
+            "depends_on": [
+              "n1"
+            ],
+            "tool_hints": [
+              "metadata_query"
+            ],
+            "done_when": "已确定要访问的表、字段和筛选条件。"
+          },
+          {
+            "id": "n3",
+            "title": "提取税务数据数据",
+            "detail": "优先按事实数据验证问题中的关键指标和差异。",
+            "status": "pending",
+            "kind": "query",
+            "depends_on": [
+              "n2"
+            ],
+            "tool_hints": [
+              "semantic_query",
+              "sql_executor"
+            ],
+            "done_when": "已获得支持结论的关键数据。"
+          },
+          {
+            "id": "n4",
+            "title": "交付税务数据结论",
+            "detail": "整理结论、关键数字、原因与建议，必要时附图表。",
+            "status": "pending",
+            "kind": "answer",
+            "depends_on": [
+              "n3"
+            ],
+            "tool_hints": [
+              "chart_generator"
+            ],
+            "done_when": "已形成可直接阅读的最终回答。"
+          }
+        ],
+        "edges": [
+          {
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "source": "n3",
+            "target": "n4"
+          }
+        ],
+        "active_node_ids": [
+          "n2"
+        ],
+        "change_reason": "模型计划不可用，使用保底路径继续执行。",
+        "source": "fallback"
+      }
+    },
+    {
+      "query": "查看华兴科技 2024 年所得税汇算清缴桥接，重点看应纳税所得额和应补退税额，先给我计划",
+      "repeat_index": 2,
+      "understanding": {
+        "query_mode": "reconciliation",
+        "intent_summary": "用户希望查看华兴科技2024年所得税汇算清缴的桥接分析，重点关注应纳税所得额和应补退税额，并要求先提供分析计划。",
+        "business_goal": "分析华兴科技2024年所得税汇算清缴中，从会计利润到应纳税所得额的调整过程，并评估最终的应补退税额。",
+        "entities": {
+          "enterprise_names": [
+            "华兴科技"
+          ],
+          "taxpayer_ids": [
+            "91310000MA1FL8XX01"
+          ],
+          "tax_types": [
+            "企业所得税"
+          ],
+          "periods": [
+            "2024"
+          ]
+        },
+        "semantic_scope": {
+          "entity_models": [],
+          "atomic_models": [
+            "fact_cit_annual"
+          ],
+          "composite_models": [
+            "mart_cit_settlement_bridge"
+          ]
+        },
+        "dimensions": [
+          "enterprise_name",
+          "tax_year",
+          "industry_name",
+          "registration_type"
+        ],
+        "metrics": [
+          "accounting_profit",
+          "tax_adjustments_increase",
+          "tax_adjustments_decrease",
+          "taxable_income",
+          "tax_amount"
+        ],
+        "comparisons": [
+          {
+            "left": "accounting_profit",
+            "right": "taxable_income",
+            "operator": "compare"
+          }
+        ],
+        "required_evidence": [
+          "会计利润",
+          "纳税调增",
+          "纳税调减",
+          "应纳税所得额",
+          "应纳所得税额",
+          "已预缴税额",
+          "应补退税额"
+        ],
+        "resolution_requirements": [
+          "确认企业名称为‘华兴科技’对应的唯一纳税人识别号"
+        ],
+        "candidate_models": [
+          "mart_cit_settlement_bridge",
+          "fact_cit_annual"
+        ],
+        "ambiguities": [
+          "用户提到的‘应补退税额’在候选模型中未明确列出，需要确认其对应的指标名称或计算逻辑。"
+        ],
+        "confidence": "high"
+      },
+      "runtime_context_summary": {
+        "query_mode": "reconciliation",
+        "period_hints": {
+          "year": 2024,
+          "quarter": null,
+          "periods": [
+            "2024"
+          ]
+        },
+        "enterprise_candidates": [
+          {
+            "enterprise_name": "华兴科技有限公司",
+            "taxpayer_id": "91310000MA1FL8XX01"
+          }
+        ],
+        "relevant_models": [
+          {
+            "name": "mart_cit_settlement_bridge",
+            "recommended_tool": "mql_query",
+            "semantic_kind": "composite_analysis",
+            "query_hints": {
+              "preferred_lane": "metric",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "所得税汇缴桥接分析",
+                "会计利润到所得额桥接",
+                "汇缴差额定位"
+              ]
+            },
+            "metrics": [
+              "accounting_profit",
+              "会计利润",
+              "tax_adjustments_increase",
+              "纳税调增",
+              "tax_adjustments_decrease",
+              "纳税调减",
+              "taxable_income",
+              "应纳税所得额",
+              "tax_amount",
+              "应纳所得税额",
+              "tax_prepaid",
+              "已预缴税额",
+              "tax_refund_or_due",
+              "应补退税额",
+              "net_tax_adjustment",
+              "纳税调整净额",
+              "effective_tax_rate",
+              "有效所得税率",
+              "settlement_gap",
+              "汇缴差异额"
+            ],
+            "dimensions": [
+              "tax_year",
+              "纳税年度",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称",
+              "registration_type",
+              "纳税人类型"
+            ]
+          },
+          {
+            "name": "fact_cit_annual",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "年度汇算分析",
+                "税会差异分析",
+                "补退税分析"
+              ]
+            },
+            "metrics": [
+              "accounting_profit",
+              "会计利润",
+              "tax_adjustments_increase",
+              "纳税调增",
+              "tax_adjustments_decrease",
+              "纳税调减",
+              "taxable_income",
+              "应纳税所得额",
+              "tax_amount",
+              "应纳所得税额",
+              "tax_prepaid",
+              "已预缴税额",
+              "tax_refund_or_due",
+              "应退补税额"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "tax_year",
+              "纳税年度",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称"
+            ]
+          },
+          {
+            "name": "fact_cit_quarterly",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "季度利润分析",
+                "季度预缴分析",
+                "所得税口径对比"
+              ]
+            },
+            "metrics": [
+              "revenue_total",
+              "营业收入",
+              "cost_total",
+              "营业成本",
+              "profit_total",
+              "利润总额",
+              "taxable_income",
+              "应纳税所得额",
+              "tax_payable",
+              "应纳所得税额",
+              "tax_prepaid",
+              "已预缴税额"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "tax_year",
+              "纳税年度",
+              "quarter",
+              "季度",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称"
+            ]
+          },
+          {
+            "name": "fact_income_statement",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "利润趋势分析",
+                "收入成本对比",
+                "利润率分析"
+              ]
+            },
+            "metrics": [
+              "revenue_main",
+              "主营业务收入",
+              "revenue_other",
+              "其他业务收入",
+              "cost_main",
+              "主营业务成本",
+              "cost_other",
+              "其他业务成本",
+              "tax_surcharges",
+              "税金及附加",
+              "admin_expenses",
+              "管理费用",
+              "finance_expenses",
+              "财务费用",
+              "profit_total",
+              "利润总额",
+              "income_tax_expense",
+              "所得税费用",
+              "net_profit",
+              "净利润",
+              "book_revenue_total",
+              "账面收入合计"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "period",
+              "会计期间",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称"
+            ]
+          },
+          {
+            "name": "dim_industry",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "entity_dimension",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "行业映射",
+                "行业基准对比"
+              ]
+            },
+            "metrics": [
+              "avg_vat_burden",
+              "行业平均增值税税负率",
+              "avg_cit_rate",
+              "行业平均所得税税率"
+            ],
+            "dimensions": [
+              "industry_code",
+              "行业代码",
+              "industry_name",
+              "行业名称",
+              "parent_code",
+              "上级行业代码"
+            ]
+          },
+          {
+            "name": "fact_other_tax_declaration",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "税种分布分析",
+                "税种趋势分析"
+              ]
+            },
+            "metrics": [
+              "tax_basis",
+              "计税依据",
+              "tax_rate",
+              "税率",
+              "tax_amount",
+              "应纳税额"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "tax_period",
+              "税款所属期",
+              "tax_type",
+              "税种",
+              "enterprise_name",
+              "企业名称"
+            ]
+          }
+        ]
+      },
+      "plan_source": "llm",
+      "reasoning": "用户要求查看华兴科技2024年所得税汇算清缴桥接分析，重点关注应纳税所得额和应补退税额，并先提供计划。语义理解层已识别出高置信度的对账意图，并推荐了复合分析模型 `mart_cit_settlement_bridge`，该模型明确支持“汇算清缴桥接”分析，且其 `recommended_tool` 为 `mql_query`。计划将围绕此模型构建，首先确认企业实体，然后执行桥接查询，最后进行分析和呈现。",
+      "validation_issues": [],
+      "business_nodes": [
+        {
+          "id": "n2",
+          "title": "查询所得税汇缴桥接数据",
+          "kind": "query",
+          "tool_hints": [
+            "mql_query"
+          ],
+          "entry_model": "mart_cit_settlement_bridge",
+          "supporting_models": [
+            "dim_enterprise",
+            "fact_cit_annual",
+            "fact_cit_quarterly",
+            "fact_income_statement",
+            "dim_industry",
+            "fact_other_tax_declaration"
+          ],
+          "metrics": [
+            "accounting_profit",
+            "tax_adjustments_increase",
+            "tax_adjustments_decrease",
+            "taxable_income",
+            "tax_amount",
+            "tax_prepaid",
+            "tax_refund_or_due",
+            "net_tax_adjustment"
+          ],
+          "dimensions": [
+            "enterprise_name",
+            "tax_year",
+            "industry_name",
+            "registration_type"
+          ],
+          "entity_filters": {
+            "enterprise_name": [
+              "华兴科技"
+            ]
+          },
+          "resolved_filters": {
+            "taxpayer_id": [
+              "91310000MA1FL8XX01"
+            ]
+          },
+          "query_language": "tda_mql",
+          "time_context": {
+            "grain": "year",
+            "range": "2024"
+          }
+        },
+        {
+          "id": "n3",
+          "title": "分析桥接结果与税会差异",
+          "kind": "analysis",
+          "tool_hints": [
+            "mql_query"
+          ],
+          "entry_model": "mart_cit_settlement_bridge",
+          "supporting_models": [
+            "fact_cit_annual",
+            "fact_cit_quarterly",
+            "fact_income_statement",
+            "dim_industry",
+            "fact_other_tax_declaration"
+          ],
+          "metrics": [
+            "accounting_profit",
+            "tax_adjustments_increase",
+            "tax_adjustments_decrease",
+            "taxable_income",
+            "tax_amount"
+          ],
+          "dimensions": [
+            "enterprise_name",
+            "tax_year",
+            "industry_name",
+            "registration_type"
+          ],
+          "entity_filters": {
+            "enterprise_name": [
+              "华兴科技",
+              "华兴科技有限公司"
+            ]
+          },
+          "resolved_filters": {},
+          "query_language": "tda_mql",
+          "time_context": {
+            "grain": "month",
+            "range": "2024"
+          }
+        }
+      ],
+      "has_mql_path": true,
+      "full_plan": {
+        "title": "税账差异执行计划",
+        "summary": "明确用户意图为‘所得税汇算清缴桥接分析’，并基于候选企业‘华兴科技有限公司’（纳税人识别号：91310000MA1FL8XX01）和2024纳税年度，为后续查询准备过滤条件。",
+        "nodes": [
+          {
+            "id": "n1",
+            "title": "确认分析目标与企业实体",
+            "detail": "明确用户意图为‘所得税汇算清缴桥接分析’，并基于候选企业‘华兴科技有限公司’（纳税人识别号：91310000MA1FL8XX01）和2024纳税年度，为后续查询准备过滤条件。",
+            "status": "pending",
+            "kind": "goal",
+            "depends_on": [],
+            "tool_hints": [
+              "knowledge"
+            ],
+            "done_when": "业务目标、企业实体和年份范围已明确，并传递给下一个节点。",
+            "semantic_binding": {
+              "entry_model": "",
+              "supporting_models": [],
+              "metrics": [],
+              "dimensions": [],
+              "entity_filters": {},
+              "resolved_filters": {},
+              "grain": "",
+              "query_language": "",
+              "time_context": {},
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": []
+            }
+          },
+          {
+            "id": "n2",
+            "title": "查询所得税汇缴桥接数据",
+            "detail": "使用语义模型 `mart_cit_settlement_bridge` 查询华兴科技2024年的会计利润、纳税调整（调增/调减）、应纳税所得额、应纳所得税额、已预缴税额和应补退税额等关键指标，完成从会计利润到汇缴结果的桥接分析。",
+            "status": "pending",
+            "kind": "query",
+            "depends_on": [
+              "n1"
+            ],
+            "tool_hints": [
+              "mql_query"
+            ],
+            "done_when": "成功获取包含所有必需证据指标的桥接数据行。",
+            "semantic_binding": {
+              "entry_model": "mart_cit_settlement_bridge",
+              "supporting_models": [
+                "dim_enterprise",
+                "fact_cit_annual",
+                "fact_cit_quarterly",
+                "fact_income_statement",
+                "dim_industry",
+                "fact_other_tax_declaration"
+              ],
+              "metrics": [
+                "accounting_profit",
+                "tax_adjustments_increase",
+                "tax_adjustments_decrease",
+                "taxable_income",
+                "tax_amount",
+                "tax_prepaid",
+                "tax_refund_or_due",
+                "net_tax_adjustment"
+              ],
+              "dimensions": [
+                "enterprise_name",
+                "tax_year",
+                "industry_name",
+                "registration_type"
+              ],
+              "entity_filters": {
+                "enterprise_name": [
+                  "华兴科技"
+                ]
+              },
+              "resolved_filters": {
+                "taxpayer_id": [
+                  "91310000MA1FL8XX01"
+                ]
+              },
+              "grain": "year",
+              "query_language": "tda_mql",
+              "time_context": {
+                "grain": "year",
+                "range": "2024"
+              },
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": [
+                {
+                  "field": "tax_year",
+                  "op": "in",
+                  "value": [
+                    "2024"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "n3",
+            "title": "分析桥接结果与税会差异",
+            "detail": "基于查询结果，重点分析会计利润与应纳税所得额之间的差异（纳税调整净额），解释调整原因；计算并解读有效所得税率；评估应补退税额的构成及汇缴差异。",
+            "status": "pending",
+            "kind": "analysis",
+            "depends_on": [
+              "n2"
+            ],
+            "tool_hints": [
+              "mql_query"
+            ],
+            "done_when": "生成对桥接过程、税会差异和补退税情况的清晰分析结论。",
+            "semantic_binding": {
+              "entry_model": "mart_cit_settlement_bridge",
+              "supporting_models": [
+                "fact_cit_annual",
+                "fact_cit_quarterly",
+                "fact_income_statement",
+                "dim_industry",
+                "fact_other_tax_declaration"
+              ],
+              "metrics": [
+                "accounting_profit",
+                "tax_adjustments_increase",
+                "tax_adjustments_decrease",
+                "taxable_income",
+                "tax_amount"
+              ],
+              "dimensions": [
+                "enterprise_name",
+                "tax_year",
+                "industry_name",
+                "registration_type"
+              ],
+              "entity_filters": {
+                "enterprise_name": [
+                  "华兴科技",
+                  "华兴科技有限公司"
+                ]
+              },
+              "resolved_filters": {},
+              "grain": "month",
+              "query_language": "tda_mql",
+              "time_context": {
+                "grain": "month",
+                "range": "2024"
+              },
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": [
+                {
+                  "field": "tax_year",
+                  "op": "in",
+                  "value": [
+                    "2024"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "n4",
+            "title": "呈现分析计划与关键发现",
+            "detail": "向用户呈现本次分析的计划概要，包括将执行的步骤、使用的数据模型，并预览从桥接查询中提取的关键指标（如应纳税所得额、应补退税额）的初步数值或趋势。",
+            "status": "pending",
+            "kind": "answer",
+            "depends_on": [
+              "n1",
+              "n2",
+              "n3"
+            ],
+            "tool_hints": [
+              "visualization"
+            ],
+            "done_when": "用户收到清晰的分析计划和初步发现摘要。",
+            "semantic_binding": {
+              "entry_model": "",
+              "supporting_models": [],
+              "metrics": [],
+              "dimensions": [],
+              "entity_filters": {},
+              "resolved_filters": {},
+              "grain": "",
+              "query_language": "",
+              "time_context": {},
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": []
+            }
+          }
+        ],
+        "edges": [
+          {
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "source": "n1",
+            "target": "n4"
+          },
+          {
+            "source": "n2",
+            "target": "n4"
+          },
+          {
+            "source": "n3",
+            "target": "n4"
+          }
+        ],
+        "active_node_ids": [
+          "n1"
+        ],
+        "change_reason": "",
+        "source": "llm"
+      }
+    },
+    {
+      "query": "查看华兴科技 2024Q3 增值税申报诊断，分析进项、销项和转出对税负的影响，先给我计划",
+      "repeat_index": 1,
+      "understanding": {
+        "query_mode": "diagnosis",
+        "intent_summary": "用户要求查看华兴科技2024年第三季度的增值税申报诊断，并分析进项税额、销项税额和转出项对税负的影响，同时要求先提供分析计划。",
+        "business_goal": "分析华兴科技在2024年第三季度增值税申报中，进项、销项和转出项的结构与金额如何影响其整体税负。",
+        "entities": {
+          "enterprise_names": [
+            "华兴科技"
+          ],
+          "taxpayer_ids": [
+            "91310000MA1FL8XX01"
+          ],
+          "tax_types": [
+            "增值税"
+          ],
+          "periods": [
+            "2024-Q3"
+          ]
+        },
+        "semantic_scope": {
+          "entity_models": [],
+          "atomic_models": [
+            "fact_vat_declaration"
+          ],
+          "composite_models": [
+            "mart_vat_declaration_diagnostics"
+          ]
+        },
+        "dimensions": [
+          "enterprise_name",
+          "tax_period",
+          "industry_name"
+        ],
+        "metrics": [
+          "output_tax_amount",
+          "input_tax_amount",
+          "taxable_sales_amount",
+          "exempt_sales_amount",
+          "total_sales_amount"
+        ],
+        "comparisons": [
+          {
+            "left": "output_tax_amount",
+            "right": "input_tax_amount",
+            "operator": "compare"
+          }
+        ],
+        "required_evidence": [
+          "销项税额",
+          "进项税额",
+          "应税销售额",
+          "免税销售额",
+          "销售额合计"
+        ],
+        "resolution_requirements": [
+          "确认 '华兴科技' 对应的准确纳税人识别号"
+        ],
+        "candidate_models": [
+          "mart_vat_declaration_diagnostics",
+          "fact_vat_declaration"
+        ],
+        "ambiguities": [
+          "用户提到的'转出'具体指代什么业务或模型字段（如进项税额转出）尚不明确"
+        ],
+        "confidence": "high"
+      },
+      "runtime_context_summary": {
+        "query_mode": "diagnosis",
+        "period_hints": {
+          "year": 2024,
+          "quarter": 3,
+          "periods": [
+            "2024-07",
+            "2024-08",
+            "2024-09",
+            "2024-Q3"
+          ]
+        },
+        "enterprise_candidates": [
+          {
+            "enterprise_name": "华兴科技有限公司",
+            "taxpayer_id": "91310000MA1FL8XX01"
+          }
+        ],
+        "relevant_models": [
+          {
+            "name": "mart_vat_declaration_diagnostics",
+            "recommended_tool": "mql_query",
+            "semantic_kind": "composite_analysis",
+            "query_hints": {
+              "preferred_lane": "metric",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "申报税额诊断",
+                "进销项结构分析",
+                "免税销售占比查看"
+              ]
+            },
+            "metrics": [
+              "total_sales_amount",
+              "销售额合计",
+              "taxable_sales_amount",
+              "应税销售额",
+              "exempt_sales_amount",
+              "免税销售额",
+              "output_tax_amount",
+              "销项税额",
+              "input_tax_amount",
+              "进项税额",
+              "input_tax_transferred_out",
+              "进项税额转出",
+              "tax_payable",
+              "应纳税额",
+              "input_output_gap",
+              "进销项税额差",
+              "declaration_effective_rate",
+              "申报有效税负率",
+              "exempt_sales_ratio",
+              "免税销售额占比"
+            ],
+            "dimensions": [
+              "tax_period",
+              "税款所属期",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称",
+              "registration_type",
+              "纳税人类型"
+            ]
+          },
+          {
+            "name": "fact_vat_declaration",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "申报金额趋势",
+                "税负测算",
+                "企业申报对比"
+              ]
+            },
+            "metrics": [
+              "total_sales_amount",
+              "销售额合计",
+              "taxable_sales_amount",
+              "应税销售额",
+              "exempt_sales_amount",
+              "免税销售额",
+              "output_tax_amount",
+              "销项税额",
+              "input_tax_amount",
+              "进项税额",
+              "input_tax_transferred_out",
+              "进项税额转出",
+              "tax_payable",
+              "应纳税额"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "tax_period",
+              "税款所属期",
+              "enterprise_name",
+              "企业名称",
+              "industry_code",
+              "行业代码",
+              "industry_name",
+              "行业名称"
+            ]
+          },
+          {
+            "name": "fact_vat_invoice_summary",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "发票结构分析",
+                "发票金额趋势",
+                "发票与申报对照"
+              ]
+            },
+            "metrics": [
+              "invoice_count",
+              "发票份数",
+              "total_amount",
+              "金额合计",
+              "total_tax",
+              "税额合计",
+              "total_amount_with_tax",
+              "价税合计"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "tax_period",
+              "税款所属期",
+              "invoice_type",
+              "发票类型",
+              "enterprise_name",
+              "企业名称"
+            ]
+          },
+          {
+            "name": "dim_industry",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "entity_dimension",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "行业映射",
+                "行业基准对比"
+              ]
+            },
+            "metrics": [
+              "avg_vat_burden",
+              "行业平均增值税税负率",
+              "avg_cit_rate",
+              "行业平均所得税税率"
+            ],
+            "dimensions": [
+              "industry_code",
+              "行业代码",
+              "industry_name",
+              "行业名称",
+              "parent_code",
+              "上级行业代码"
+            ]
+          },
+          {
+            "name": "fact_other_tax_declaration",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "税种分布分析",
+                "税种趋势分析"
+              ]
+            },
+            "metrics": [
+              "tax_basis",
+              "计税依据",
+              "tax_rate",
+              "税率",
+              "tax_amount",
+              "应纳税额"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "tax_period",
+              "税款所属期",
+              "tax_type",
+              "税种",
+              "enterprise_name",
+              "企业名称"
+            ]
+          },
+          {
+            "name": "fact_balance_sheet",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "资产结构分析",
+                "负债变化分析",
+                "资产负债率分析"
+              ]
+            },
+            "metrics": [
+              "cash",
+              "货币资金",
+              "receivables",
+              "应收账款",
+              "inventory",
+              "存货",
+              "fixed_assets",
+              "固定资产",
+              "total_assets",
+              "资产合计",
+              "payables",
+              "应付账款",
+              "tax_payable_bs",
+              "应交税费",
+              "total_liabilities",
+              "负债合计",
+              "total_equity",
+              "所有者权益合计"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "period",
+              "会计期间",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称"
+            ]
+          }
+        ]
+      },
+      "plan_source": "llm",
+      "reasoning": "User requests a plan for VAT declaration diagnosis of Huaxing Tech for 2024Q3, focusing on input, output, and transferred-out tax impact on tax burden. The semantic grounding strongly recommends the mart_vat_declaration_diagnostics model with mql_query. The plan will first resolve the enterprise, then query the diagnostic metrics, and finally analyze the impact.",
+      "validation_issues": [],
+      "business_nodes": [
+        {
+          "id": "n2",
+          "title": "Resolve Enterprise Entity",
+          "kind": "query",
+          "tool_hints": [
+            "mql_query"
+          ],
+          "entry_model": "mart_vat_declaration_diagnostics",
+          "supporting_models": [
+            "fact_vat_declaration",
+            "fact_vat_invoice_summary",
+            "dim_industry",
+            "fact_other_tax_declaration",
+            "fact_balance_sheet"
+          ],
+          "metrics": [
+            "output_tax_amount",
+            "input_tax_amount",
+            "taxable_sales_amount",
+            "exempt_sales_amount",
+            "total_sales_amount"
+          ],
+          "dimensions": [
+            "enterprise_name",
+            "tax_period",
+            "industry_name"
+          ],
+          "entity_filters": {
+            "enterprise_name": [
+              "华兴科技"
+            ]
+          },
+          "resolved_filters": {},
+          "query_language": "tda_mql",
+          "time_context": {
+            "grain": "month",
+            "range": "2024Q3"
+          }
+        },
+        {
+          "id": "n3",
+          "title": "Query VAT Diagnostic Metrics",
+          "kind": "query",
+          "tool_hints": [
+            "mql_query"
+          ],
+          "entry_model": "mart_vat_declaration_diagnostics",
+          "supporting_models": [
+            "dim_enterprise",
+            "fact_vat_declaration",
+            "fact_vat_invoice_summary",
+            "dim_industry",
+            "fact_other_tax_declaration",
+            "fact_balance_sheet"
+          ],
+          "metrics": [
+            "output_tax_amount",
+            "input_tax_amount",
+            "input_tax_transferred_out",
+            "tax_payable",
+            "total_sales_amount",
+            "taxable_sales_amount",
+            "exempt_sales_amount",
+            "declaration_effective_rate"
+          ],
+          "dimensions": [
+            "enterprise_name",
+            "tax_period",
+            "industry_name"
+          ],
+          "entity_filters": {
+            "enterprise_name": [
+              "华兴科技"
+            ]
+          },
+          "resolved_filters": {},
+          "query_language": "tda_mql",
+          "time_context": {
+            "grain": "month",
+            "range": "2024Q3"
+          }
+        },
+        {
+          "id": "n4",
+          "title": "Analyze Impact on Tax Burden",
+          "kind": "analysis",
+          "tool_hints": [
+            "mql_query"
+          ],
+          "entry_model": "mart_vat_declaration_diagnostics",
+          "supporting_models": [
+            "fact_vat_declaration",
+            "fact_vat_invoice_summary",
+            "dim_industry",
+            "fact_other_tax_declaration",
+            "fact_balance_sheet"
+          ],
+          "metrics": [
+            "output_tax_amount",
+            "input_tax_amount",
+            "input_tax_transferred_out",
+            "tax_payable",
+            "declaration_effective_rate",
+            "input_output_gap",
+            "taxable_sales_amount",
+            "exempt_sales_amount"
+          ],
+          "dimensions": [
+            "tax_period",
+            "enterprise_name",
+            "industry_name"
+          ],
+          "entity_filters": {
+            "enterprise_name": [
+              "华兴科技",
+              "华兴科技有限公司"
+            ]
+          },
+          "resolved_filters": {},
+          "query_language": "tda_mql",
+          "time_context": {
+            "grain": "month",
+            "range": "2024Q3"
+          }
+        }
+      ],
+      "has_mql_path": true,
+      "full_plan": {
+        "title": "税务数据执行计划",
+        "summary": "Clarify the business goal: diagnose Huaxing Tech's VAT declaration for 2024Q3, analyzing how input tax, output tax, and transferred-out amounts affect the effective tax burden.",
+        "nodes": [
+          {
+            "id": "n1",
+            "title": "Define Analysis Goal",
+            "detail": "Clarify the business goal: diagnose Huaxing Tech's VAT declaration for 2024Q3, analyzing how input tax, output tax, and transferred-out amounts affect the effective tax burden.",
+            "status": "pending",
+            "kind": "goal",
+            "depends_on": [],
+            "tool_hints": [],
+            "done_when": "Goal is articulated and linked to semantic assets.",
+            "semantic_binding": {
+              "entry_model": "",
+              "supporting_models": [],
+              "metrics": [],
+              "dimensions": [],
+              "entity_filters": {},
+              "resolved_filters": {},
+              "grain": "",
+              "query_language": "",
+              "time_context": {},
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": []
+            }
+          },
+          {
+            "id": "n2",
+            "title": "Resolve Enterprise Entity",
+            "detail": "Confirm the exact taxpayer ID for '华兴科技' using the enterprise_info table to ensure accurate filtering for subsequent queries.",
+            "status": "pending",
+            "kind": "query",
+            "depends_on": [
+              "n1"
+            ],
+            "tool_hints": [
+              "mql_query"
+            ],
+            "done_when": "Taxpayer ID is obtained for the enterprise candidate.",
+            "semantic_binding": {
+              "entry_model": "mart_vat_declaration_diagnostics",
+              "supporting_models": [
+                "fact_vat_declaration",
+                "fact_vat_invoice_summary",
+                "dim_industry",
+                "fact_other_tax_declaration",
+                "fact_balance_sheet"
+              ],
+              "metrics": [
+                "output_tax_amount",
+                "input_tax_amount",
+                "taxable_sales_amount",
+                "exempt_sales_amount",
+                "total_sales_amount"
+              ],
+              "dimensions": [
+                "enterprise_name",
+                "tax_period",
+                "industry_name"
+              ],
+              "entity_filters": {
+                "enterprise_name": [
+                  "华兴科技"
+                ]
+              },
+              "resolved_filters": {},
+              "grain": "month",
+              "query_language": "tda_mql",
+              "time_context": {
+                "grain": "month",
+                "range": "2024Q3"
+              },
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": [
+                {
+                  "field": "tax_period",
+                  "op": "in",
+                  "value": [
+                    "2024-07",
+                    "2024-08",
+                    "2024-09",
+                    "2024-Q3"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "n3",
+            "title": "Query VAT Diagnostic Metrics",
+            "detail": "Fetch key VAT declaration metrics for Huaxing Tech in 2024Q3 (months: 2024-07, 2024-08, 2024-09) using the composite diagnostic model, which includes output tax, input tax, transferred-out, tax payabl",
+            "status": "pending",
+            "kind": "query",
+            "depends_on": [
+              "n2"
+            ],
+            "tool_hints": [
+              "mql_query"
+            ],
+            "done_when": "Data for the specified enterprise and period is retrieved with all required metrics.",
+            "semantic_binding": {
+              "entry_model": "mart_vat_declaration_diagnostics",
+              "supporting_models": [
+                "dim_enterprise",
+                "fact_vat_declaration",
+                "fact_vat_invoice_summary",
+                "dim_industry",
+                "fact_other_tax_declaration",
+                "fact_balance_sheet"
+              ],
+              "metrics": [
+                "output_tax_amount",
+                "input_tax_amount",
+                "input_tax_transferred_out",
+                "tax_payable",
+                "total_sales_amount",
+                "taxable_sales_amount",
+                "exempt_sales_amount",
+                "declaration_effective_rate"
+              ],
+              "dimensions": [
+                "enterprise_name",
+                "tax_period",
+                "industry_name"
+              ],
+              "entity_filters": {
+                "enterprise_name": [
+                  "华兴科技"
+                ]
+              },
+              "resolved_filters": {},
+              "grain": "month",
+              "query_language": "tda_mql",
+              "time_context": {
+                "grain": "month",
+                "range": "2024Q3"
+              },
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": [
+                {
+                  "field": "tax_period",
+                  "op": "in",
+                  "value": [
+                    "2024-07",
+                    "2024-08",
+                    "2024-09",
+                    "2024-Q3"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "n4",
+            "title": "Analyze Impact on Tax Burden",
+            "detail": "Interpret the retrieved data to explain the relationship between input, output, transferred-out amounts and the final tax payable and effective tax rate. Highlight structural insights and potential an",
+            "status": "pending",
+            "kind": "analysis",
+            "depends_on": [
+              "n3"
+            ],
+            "tool_hints": [
+              "mql_query"
+            ],
+            "done_when": "A clear narrative is formed explaining the influence of each component on the tax burden.",
+            "semantic_binding": {
+              "entry_model": "mart_vat_declaration_diagnostics",
+              "supporting_models": [
+                "fact_vat_declaration",
+                "fact_vat_invoice_summary",
+                "dim_industry",
+                "fact_other_tax_declaration",
+                "fact_balance_sheet"
+              ],
+              "metrics": [
+                "output_tax_amount",
+                "input_tax_amount",
+                "input_tax_transferred_out",
+                "tax_payable",
+                "declaration_effective_rate",
+                "input_output_gap",
+                "taxable_sales_amount",
+                "exempt_sales_amount"
+              ],
+              "dimensions": [
+                "tax_period",
+                "enterprise_name",
+                "industry_name"
+              ],
+              "entity_filters": {
+                "enterprise_name": [
+                  "华兴科技",
+                  "华兴科技有限公司"
+                ]
+              },
+              "resolved_filters": {},
+              "grain": "month",
+              "query_language": "tda_mql",
+              "time_context": {
+                "grain": "month",
+                "range": "2024Q3"
+              },
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": [
+                {
+                  "field": "tax_period",
+                  "op": "in",
+                  "value": [
+                    "2024-07",
+                    "2024-08",
+                    "2024-09",
+                    "2024-Q3"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "n5",
+            "title": "Present Diagnosis Plan",
+            "detail": "Summarize the planned steps and expected outputs for the user, fulfilling their request for the plan first.",
+            "status": "pending",
+            "kind": "answer",
+            "depends_on": [
+              "n1",
+              "n2",
+              "n3",
+              "n4"
+            ],
+            "tool_hints": [],
+            "done_when": "A concise plan is delivered to the user.",
+            "semantic_binding": {
+              "entry_model": "",
+              "supporting_models": [],
+              "metrics": [],
+              "dimensions": [],
+              "entity_filters": {},
+              "resolved_filters": {},
+              "grain": "",
+              "query_language": "",
+              "time_context": {},
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": []
+            }
+          }
+        ],
+        "edges": [
+          {
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "source": "n1",
+            "target": "n5"
+          },
+          {
+            "source": "n2",
+            "target": "n5"
+          },
+          {
+            "source": "n3",
+            "target": "n5"
+          },
+          {
+            "source": "n4",
+            "target": "n5"
+          }
+        ],
+        "active_node_ids": [
+          "n1"
+        ],
+        "change_reason": "",
+        "source": "llm"
+      }
+    },
+    {
+      "query": "查看华兴科技 2024Q3 增值税申报诊断，分析进项、销项和转出对税负的影响，先给我计划",
+      "repeat_index": 2,
+      "understanding": {
+        "query_mode": "diagnosis",
+        "intent_summary": "用户希望获取华兴科技2024年第三季度增值税申报的详细诊断计划，重点分析进项税额、销项税额和转出项对最终税负的影响。",
+        "business_goal": "分析华兴科技2024年第三季度增值税申报中，进项、销项和转出各项的金额、结构及其对税负的具体影响，并生成诊断计划。",
+        "entities": {
+          "enterprise_names": [
+            "华兴科技"
+          ],
+          "taxpayer_ids": [
+            "91310000MA1FL8XX01"
+          ],
+          "tax_types": [
+            "增值税"
+          ],
+          "periods": [
+            "2024-Q3"
+          ]
+        },
+        "semantic_scope": {
+          "entity_models": [],
+          "atomic_models": [
+            "fact_vat_declaration"
+          ],
+          "composite_models": [
+            "mart_vat_declaration_diagnostics"
+          ]
+        },
+        "dimensions": [
+          "enterprise_name",
+          "tax_period",
+          "industry_name"
+        ],
+        "metrics": [
+          "output_tax_amount",
+          "input_tax_amount",
+          "taxable_sales_amount",
+          "exempt_sales_amount",
+          "total_sales_amount"
+        ],
+        "comparisons": [
+          {
+            "left": "output_tax_amount",
+            "right": "input_tax_amount",
+            "operator": "compare"
+          }
+        ],
+        "required_evidence": [
+          "销项税额",
+          "进项税额",
+          "应税销售额",
+          "免税销售额",
+          "销售额合计"
+        ],
+        "resolution_requirements": [
+          "已从候选企业列表解析出纳税人识别号"
+        ],
+        "candidate_models": [
+          "mart_vat_declaration_diagnostics",
+          "fact_vat_declaration"
+        ],
+        "ambiguities": [
+          "用户提到的'转出'具体指进项税额转出还是其他转出项，需要进一步明确"
+        ],
+        "confidence": "high"
+      },
+      "runtime_context_summary": {
+        "query_mode": "diagnosis",
+        "period_hints": {
+          "year": 2024,
+          "quarter": 3,
+          "periods": [
+            "2024-07",
+            "2024-08",
+            "2024-09",
+            "2024-Q3"
+          ]
+        },
+        "enterprise_candidates": [
+          {
+            "enterprise_name": "华兴科技有限公司",
+            "taxpayer_id": "91310000MA1FL8XX01"
+          }
+        ],
+        "relevant_models": [
+          {
+            "name": "mart_vat_declaration_diagnostics",
+            "recommended_tool": "mql_query",
+            "semantic_kind": "composite_analysis",
+            "query_hints": {
+              "preferred_lane": "metric",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "申报税额诊断",
+                "进销项结构分析",
+                "免税销售占比查看"
+              ]
+            },
+            "metrics": [
+              "total_sales_amount",
+              "销售额合计",
+              "taxable_sales_amount",
+              "应税销售额",
+              "exempt_sales_amount",
+              "免税销售额",
+              "output_tax_amount",
+              "销项税额",
+              "input_tax_amount",
+              "进项税额",
+              "input_tax_transferred_out",
+              "进项税额转出",
+              "tax_payable",
+              "应纳税额",
+              "input_output_gap",
+              "进销项税额差",
+              "declaration_effective_rate",
+              "申报有效税负率",
+              "exempt_sales_ratio",
+              "免税销售额占比"
+            ],
+            "dimensions": [
+              "tax_period",
+              "税款所属期",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称",
+              "registration_type",
+              "纳税人类型"
+            ]
+          },
+          {
+            "name": "fact_vat_declaration",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "申报金额趋势",
+                "税负测算",
+                "企业申报对比"
+              ]
+            },
+            "metrics": [
+              "total_sales_amount",
+              "销售额合计",
+              "taxable_sales_amount",
+              "应税销售额",
+              "exempt_sales_amount",
+              "免税销售额",
+              "output_tax_amount",
+              "销项税额",
+              "input_tax_amount",
+              "进项税额",
+              "input_tax_transferred_out",
+              "进项税额转出",
+              "tax_payable",
+              "应纳税额"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "tax_period",
+              "税款所属期",
+              "enterprise_name",
+              "企业名称",
+              "industry_code",
+              "行业代码",
+              "industry_name",
+              "行业名称"
+            ]
+          },
+          {
+            "name": "fact_vat_invoice_summary",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "发票结构分析",
+                "发票金额趋势",
+                "发票与申报对照"
+              ]
+            },
+            "metrics": [
+              "invoice_count",
+              "发票份数",
+              "total_amount",
+              "金额合计",
+              "total_tax",
+              "税额合计",
+              "total_amount_with_tax",
+              "价税合计"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "tax_period",
+              "税款所属期",
+              "invoice_type",
+              "发票类型",
+              "enterprise_name",
+              "企业名称"
+            ]
+          },
+          {
+            "name": "dim_industry",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "entity_dimension",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "行业映射",
+                "行业基准对比"
+              ]
+            },
+            "metrics": [
+              "avg_vat_burden",
+              "行业平均增值税税负率",
+              "avg_cit_rate",
+              "行业平均所得税税率"
+            ],
+            "dimensions": [
+              "industry_code",
+              "行业代码",
+              "industry_name",
+              "行业名称",
+              "parent_code",
+              "上级行业代码"
+            ]
+          },
+          {
+            "name": "fact_other_tax_declaration",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "税种分布分析",
+                "税种趋势分析"
+              ]
+            },
+            "metrics": [
+              "tax_basis",
+              "计税依据",
+              "tax_rate",
+              "税率",
+              "tax_amount",
+              "应纳税额"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "tax_period",
+              "税款所属期",
+              "tax_type",
+              "税种",
+              "enterprise_name",
+              "企业名称"
+            ]
+          },
+          {
+            "name": "fact_balance_sheet",
+            "recommended_tool": "semantic_query",
+            "semantic_kind": "atomic_fact",
+            "query_hints": {
+              "preferred_lane": "detail",
+              "supports_drilldown": true,
+              "recommended_patterns": [
+                "资产结构分析",
+                "负债变化分析",
+                "资产负债率分析"
+              ]
+            },
+            "metrics": [
+              "cash",
+              "货币资金",
+              "receivables",
+              "应收账款",
+              "inventory",
+              "存货",
+              "fixed_assets",
+              "固定资产",
+              "total_assets",
+              "资产合计",
+              "payables",
+              "应付账款",
+              "tax_payable_bs",
+              "应交税费",
+              "total_liabilities",
+              "负债合计",
+              "total_equity",
+              "所有者权益合计"
+            ],
+            "dimensions": [
+              "taxpayer_id",
+              "纳税人识别号",
+              "period",
+              "会计期间",
+              "enterprise_name",
+              "企业名称",
+              "industry_name",
+              "行业名称"
+            ]
+          }
+        ]
+      },
+      "plan_source": "llm",
+      "reasoning": "User requests a diagnostic plan for VAT declaration analysis. The mart_vat_declaration_diagnostics model is the best fit, with strong semantic grounding and recommended_tool=mql_query. Plan will fetch core data, analyze impact, and prepare a structured diagnostic report.",
+      "validation_issues": [],
+      "business_nodes": [
+        {
+          "id": "n2",
+          "title": "Query Core VAT Declaration D",
+          "kind": "query",
+          "tool_hints": [
+            "mql_query"
+          ],
+          "entry_model": "mart_vat_declaration_diagnostics",
+          "supporting_models": [
+            "dim_enterprise",
+            "fact_vat_declaration",
+            "fact_vat_invoice_summary",
+            "dim_industry",
+            "fact_other_tax_declaration",
+            "fact_balance_sheet"
+          ],
+          "metrics": [
+            "total_sales_amount",
+            "taxable_sales_amount",
+            "exempt_sales_amount",
+            "output_tax_amount",
+            "input_tax_amount",
+            "input_tax_transferred_out",
+            "tax_payable",
+            "input_output_gap"
+          ],
+          "dimensions": [
+            "enterprise_name",
+            "tax_period",
+            "industry_name"
+          ],
+          "entity_filters": {
+            "enterprise_name": [
+              "华兴科技"
+            ]
+          },
+          "resolved_filters": {
+            "taxpayer_id": [
+              "91310000MA1FL8XX01"
+            ]
+          },
+          "query_language": "tda_mql",
+          "time_context": {
+            "grain": "month",
+            "range": "2024Q3"
+          }
+        },
+        {
+          "id": "n3",
+          "title": "Analyze Impact on Tax Burden",
+          "kind": "analysis",
+          "tool_hints": [
+            "mql_query"
+          ],
+          "entry_model": "mart_vat_declaration_diagnostics",
+          "supporting_models": [
+            "fact_vat_declaration",
+            "fact_vat_invoice_summary",
+            "dim_industry",
+            "fact_other_tax_declaration",
+            "fact_balance_sheet"
+          ],
+          "metrics": [
+            "output_tax_amount",
+            "input_tax_amount",
+            "input_tax_transferred_out",
+            "tax_payable",
+            "declaration_effective_rate",
+            "input_output_gap",
+            "taxable_sales_amount",
+            "exempt_sales_amount"
+          ],
+          "dimensions": [
+            "tax_period",
+            "enterprise_name",
+            "industry_name"
+          ],
+          "entity_filters": {
+            "enterprise_name": [
+              "华兴科技",
+              "华兴科技有限公司"
+            ]
+          },
+          "resolved_filters": {},
+          "query_language": "tda_mql",
+          "time_context": {
+            "grain": "month",
+            "range": "2024Q3"
+          }
+        }
+      ],
+      "has_mql_path": true,
+      "full_plan": {
+        "title": "税务数据执行计划",
+        "summary": "Establish the goal to analyze the impact of input tax, output tax, and transferred-out amounts on the tax burden for Huaxing Technology in 2024Q3.",
+        "nodes": [
+          {
+            "id": "n1",
+            "title": "Goal: VAT Declaration Diagno",
+            "detail": "Establish the goal to analyze the impact of input tax, output tax, and transferred-out amounts on the tax burden for Huaxing Technology in 2024Q3.",
+            "status": "pending",
+            "kind": "goal",
+            "depends_on": [],
+            "tool_hints": [],
+            "done_when": "Goal is clearly defined and scope is set.",
+            "semantic_binding": {
+              "entry_model": "",
+              "supporting_models": [],
+              "metrics": [],
+              "dimensions": [],
+              "entity_filters": {},
+              "resolved_filters": {},
+              "grain": "",
+              "query_language": "",
+              "time_context": {},
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": []
+            }
+          },
+          {
+            "id": "n2",
+            "title": "Query Core VAT Declaration D",
+            "detail": "Fetch monthly VAT declaration data for Huaxing Technology (taxpayer_id: 91310000MA1FL8XX01) for 2024Q3 months (July, August, September) using the diagnostic mart model. Retrieve key metrics: sales amo",
+            "status": "pending",
+            "kind": "query",
+            "depends_on": [
+              "n1"
+            ],
+            "tool_hints": [
+              "mql_query"
+            ],
+            "done_when": "Data for the enterprise and period is retrieved successfully.",
+            "semantic_binding": {
+              "entry_model": "mart_vat_declaration_diagnostics",
+              "supporting_models": [
+                "dim_enterprise",
+                "fact_vat_declaration",
+                "fact_vat_invoice_summary",
+                "dim_industry",
+                "fact_other_tax_declaration",
+                "fact_balance_sheet"
+              ],
+              "metrics": [
+                "total_sales_amount",
+                "taxable_sales_amount",
+                "exempt_sales_amount",
+                "output_tax_amount",
+                "input_tax_amount",
+                "input_tax_transferred_out",
+                "tax_payable",
+                "input_output_gap"
+              ],
+              "dimensions": [
+                "enterprise_name",
+                "tax_period",
+                "industry_name"
+              ],
+              "entity_filters": {
+                "enterprise_name": [
+                  "华兴科技"
+                ]
+              },
+              "resolved_filters": {
+                "taxpayer_id": [
+                  "91310000MA1FL8XX01"
+                ]
+              },
+              "grain": "month",
+              "query_language": "tda_mql",
+              "time_context": {
+                "grain": "month",
+                "range": "2024Q3"
+              },
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": [
+                {
+                  "field": "tax_period",
+                  "op": "in",
+                  "value": [
+                    "2024-07",
+                    "2024-08",
+                    "2024-09",
+                    "2024-Q3"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "n3",
+            "title": "Analyze Impact on Tax Burden",
+            "detail": "Analyze the retrieved data to quantify the influence of input tax, output tax, and transferred-out amounts on the final tax payable and effective tax rate. Identify key drivers, anomalies, and structu",
+            "status": "pending",
+            "kind": "analysis",
+            "depends_on": [
+              "n2"
+            ],
+            "tool_hints": [
+              "mql_query"
+            ],
+            "done_when": "Clear insights on the contribution of each component to the tax burden are formulated.",
+            "semantic_binding": {
+              "entry_model": "mart_vat_declaration_diagnostics",
+              "supporting_models": [
+                "fact_vat_declaration",
+                "fact_vat_invoice_summary",
+                "dim_industry",
+                "fact_other_tax_declaration",
+                "fact_balance_sheet"
+              ],
+              "metrics": [
+                "output_tax_amount",
+                "input_tax_amount",
+                "input_tax_transferred_out",
+                "tax_payable",
+                "declaration_effective_rate",
+                "input_output_gap",
+                "taxable_sales_amount",
+                "exempt_sales_amount"
+              ],
+              "dimensions": [
+                "tax_period",
+                "enterprise_name",
+                "industry_name"
+              ],
+              "entity_filters": {
+                "enterprise_name": [
+                  "华兴科技",
+                  "华兴科技有限公司"
+                ]
+              },
+              "resolved_filters": {},
+              "grain": "month",
+              "query_language": "tda_mql",
+              "time_context": {
+                "grain": "month",
+                "range": "2024Q3"
+              },
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": [
+                {
+                  "field": "tax_period",
+                  "op": "in",
+                  "value": [
+                    "2024-07",
+                    "2024-08",
+                    "2024-09",
+                    "2024-Q3"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "n4",
+            "title": "Prepare Diagnostic Report Pl",
+            "detail": "Structure the findings into a diagnostic report plan, outlining key sections: executive summary, data overview, component impact analysis, risk/opportunity highlights, and recommended next steps for t",
+            "status": "pending",
+            "kind": "answer",
+            "depends_on": [
+              "n3"
+            ],
+            "tool_hints": [],
+            "done_when": "A clear, actionable diagnostic plan is ready for presentation to the user.",
+            "semantic_binding": {
+              "entry_model": "",
+              "supporting_models": [],
+              "metrics": [],
+              "dimensions": [],
+              "entity_filters": {},
+              "resolved_filters": {},
+              "grain": "",
+              "query_language": "",
+              "time_context": {},
+              "analysis_mode": {},
+              "drilldown": {},
+              "fallback_policy": "atomic_then_sql",
+              "filters": []
+            }
+          }
+        ],
+        "edges": [
+          {
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "source": "n3",
+            "target": "n4"
+          }
+        ],
+        "active_node_ids": [
+          "n1"
+        ],
+        "change_reason": "",
+        "source": "llm"
+      }
+    }
+  ]
+}

@@ -70,6 +70,18 @@ DOMAIN_KEYWORDS = tuple(
             "企业",
             "公司",
             "税务",
+            "汇算清缴",
+            "汇缴",
+            "桥接",
+            "应纳税所得额",
+            "应补退税额",
+            "应纳所得税额",
+            "预缴税额",
+            "进项",
+            "销项",
+            "转出",
+            "税负",
+            "诊断",
         )
     )
 )
@@ -328,14 +340,22 @@ async def build_runtime_context(
                     SysSemanticModel.label,
                     SysSemanticModel.description,
                     SysSemanticModel.source_table,
+                    SysSemanticModel.model_type,
                     SysSemanticModel.yaml_definition,
                     SysSemanticModel.status,
                 ).where(SysSemanticModel.status == "active")
             )
             models: list[dict[str, Any]] = []
-            for name, label, description, source_table, yaml_definition, status in model_result.all():
+            for name, label, description, source_table, model_type, yaml_definition, status in model_result.all():
                 asset_text = " ".join(filter(None, [name, label, description, source_table]))
                 score, matched = _score_asset_text(query_keywords, asset_text, mode_info["query_mode"])
+                has_yaml = bool((yaml_definition or "").strip())
+                if has_yaml and model_type == "metric":
+                    recommended_tool = "mql_query"
+                elif has_yaml:
+                    recommended_tool = "semantic_query"
+                else:
+                    recommended_tool = "sql_executor"
                 models.append(
                     {
                         "name": name,
@@ -343,8 +363,8 @@ async def build_runtime_context(
                         "description": description or "",
                         "source_table": source_table,
                         "status": status,
-                        "has_yaml_definition": bool((yaml_definition or "").strip()),
-                        "recommended_tool": "semantic_query" if (yaml_definition or "").strip() else "sql_executor",
+                        "has_yaml_definition": has_yaml,
+                        "recommended_tool": recommended_tool,
                         "score": score,
                         "matched_keywords": matched,
                         "business_terms": [],
@@ -405,14 +425,28 @@ async def build_runtime_context(
         intent_summary = str(understanding_result.get("intent_summary") or "").strip()
         if intent_summary:
             guidance.append(f"LLM 理解层已识别本次业务目标：{intent_summary}")
+        semantic_scope = understanding_result.get("semantic_scope") or {}
+        preferred_models = []
+        for key in ("composite_models", "atomic_models", "entity_models"):
+            for name in semantic_scope.get(key, []) or []:
+                text = str(name or "").strip()
+                if text and text not in preferred_models:
+                    preferred_models.append(text)
         if understanding_result.get("candidate_models"):
             guidance.append(
                 "优先围绕理解层选择的语义模型规划和执行："
                 + "、".join(str(name) for name in understanding_result.get("candidate_models", [])[:3])
             )
+        elif preferred_models:
+            guidance.append("优先围绕分层语义范围规划和执行：" + "、".join(preferred_models[:3]))
+        resolution_requirements = understanding_result.get("resolution_requirements") or []
+        if resolution_requirements:
+            guidance.append("执行前需满足的解析要求：" + "；".join(str(item) for item in resolution_requirements[:3]))
     if mode_info["query_mode"] == "analysis":
         guidance.append("这是复杂业务分析问题，优先查询事实数据，不要默认走 metadata_query。")
         guidance.append("如果已有收入对比、差异分析、核验结果等事实资产，优先直接利用。")
+        if any(item.get("recommended_tool") == "mql_query" for item in relevant_models):
+            guidance.append("若命中指标语义强的复合分析模型，优先显式走 mql_query 主路径。")
     elif mode_info["query_mode"] == "reconciliation":
         guidance.append("这是对账问题，必须同时覆盖至少两个业务口径或两个对比对象，不能只拿单边数据。")
     elif mode_info["query_mode"] == "diagnosis":
@@ -429,7 +463,7 @@ async def build_runtime_context(
         guidance.append("用户提到了季度/期间；如果物理表按月存 period，可将季度展开为对应月份。")
 
     if any(not model["has_yaml_definition"] for model in relevant_models):
-        guidance.append("没有 YAML 定义的语义模型不能走 semantic_query，只能把 source_table 当作 SQL 线索。")
+        guidance.append("没有 YAML 定义的语义模型不能走 semantic_query 或 mql_query，只能把 source_table 当作 SQL 线索。")
 
     if enterprise_candidates:
         for table_schema in relevant_table_schemas:
@@ -448,12 +482,59 @@ async def build_runtime_context(
         "company_fragments": company_fragments,
         "enterprise_candidates": enterprise_candidates[:5],
         "relevant_models": relevant_models,
+        "semantic_catalog_by_kind": (semantic_grounding or {}).get("catalog_by_kind") or {},
         "relevant_tables": relevant_tables,
         "relevant_table_schemas": relevant_table_schemas,
         "execution_guidance": guidance,
         "understanding_result": understanding_result or {},
         "semantic_grounding": semantic_grounding or {},
     }
+
+
+def _binding_model_names(node: dict[str, Any]) -> set[str]:
+    binding = node.get("semantic_binding")
+    if not isinstance(binding, dict):
+        return set()
+
+    names: set[str] = set()
+    for key in ("entry_model",):
+        value = str(binding.get(key) or "").strip()
+        if value:
+            names.add(value)
+    for key in ("supporting_models", "models"):
+        for item in binding.get(key, []) or []:
+            value = str(item or "").strip()
+            if value:
+                names.add(value)
+    return names
+
+
+def _has_semantic_binding(node: dict[str, Any]) -> bool:
+    binding = node.get("semantic_binding")
+    if not isinstance(binding, dict):
+        return False
+    return bool(str(binding.get("entry_model") or "").strip() or (binding.get("models") or []))
+
+
+def _binding_has_enterprise_filter(node: dict[str, Any]) -> bool:
+    binding = node.get("semantic_binding")
+    if not isinstance(binding, dict):
+        return False
+
+    entity_filters = binding.get("entity_filters") or {}
+    resolved_filters = binding.get("resolved_filters") or {}
+    if (entity_filters.get("enterprise_name") or entity_filters.get("enterprise_names")):
+        return True
+    if resolved_filters.get("taxpayer_id"):
+        return True
+
+    for item in binding.get("filters", []) or []:
+        if not isinstance(item, dict):
+            continue
+        field = str(item.get("field") or "").strip()
+        if field in {"enterprise_name", "enterprise_names", "taxpayer_id"}:
+            return True
+    return False
 
 
 def validate_plan_graph(plan_graph: dict[str, Any], runtime_context: dict[str, Any]) -> list[str]:
@@ -494,10 +575,7 @@ def validate_plan_graph(plan_graph: dict[str, Any], runtime_context: dict[str, A
         for item in (runtime_context.get("relevant_models") or [])
         if item.get("has_yaml_definition") and item.get("name")
     ]
-    semantic_bound = any(
-        isinstance(node.get("semantic_binding"), dict) and (node.get("semantic_binding", {}).get("models") or [])
-        for node in business_nodes
-    )
+    semantic_bound = any(_has_semantic_binding(node) for node in business_nodes)
 
     if query_mode == "analysis":
         if not business_nodes:
@@ -505,7 +583,7 @@ def validate_plan_graph(plan_graph: dict[str, Any], runtime_context: dict[str, A
         if metadata_only:
             issues.append("复杂分析问题被规划成了纯 metadata_query 路径。")
         if any(word in full_text for word in ("表结构", "字段", "schema", "metadata")) and not any(
-            hint in {"sql_executor", "semantic_query", "knowledge_search", "chart_generator"}
+            hint in {"sql_executor", "semantic_query", "mql_query", "knowledge_search", "chart_generator"}
             for node in nodes
             for hint in (node.get("tool_hints") or [])
         ):
@@ -517,18 +595,43 @@ def validate_plan_graph(plan_graph: dict[str, Any], runtime_context: dict[str, A
         if not semantic_bound:
             issues.append("当前问题已有可用语义模型，但计划未显式绑定 semantic_binding。")
 
+    if query_mode in {"fact_query", "analysis", "reconciliation", "diagnosis"}:
+        for node in business_nodes:
+            if node.get("kind") not in {"query", "analysis"}:
+                continue
+            binding = node.get("semantic_binding") if isinstance(node.get("semantic_binding"), dict) else {}
+            if binding and not str(binding.get("entry_model") or "").strip() and not (binding.get("models") or []):
+                issues.append("业务查询节点存在不完整 semantic_binding：缺少 entry_model。")
+                break
+
+    enterprise_names = set(str(name) for name in ((understanding_result.get("entities") or {}).get("enterprise_names") or []) if name)
+    for item in runtime_context.get("enterprise_candidates") or []:
+        value = str(item.get("enterprise_name") or "").strip()
+        if value:
+            enterprise_names.add(value)
+    if enterprise_names and query_mode in {"fact_query", "analysis", "reconciliation", "diagnosis"}:
+        for node in business_nodes:
+            if node.get("kind") not in {"query", "analysis"}:
+                continue
+            if _has_semantic_binding(node) and not _binding_has_enterprise_filter(node):
+                issues.append("用户已指定企业，但业务查询节点的 semantic_binding 缺少 enterprise_name/taxpayer_id 过滤。")
+                break
+
     if query_mode == "metadata":
         if any(node.get("kind") in {"analysis", "visualization"} for node in nodes):
             issues.append("元数据问题被规划成了业务分析路径。")
 
     candidate_models = set(str(name) for name in understanding_result.get("candidate_models", []) if name)
+    semantic_scope = understanding_result.get("semantic_scope") or {}
+    for key in ("entity_models", "atomic_models", "composite_models"):
+        for name in semantic_scope.get(key, []) or []:
+            value = str(name or "").strip()
+            if value:
+                candidate_models.add(value)
     if candidate_models and semantic_bound:
-        bound_models = {
-            str(model_name)
-            for node in business_nodes
-            for model_name in ((node.get("semantic_binding") or {}).get("models") or [])
-            if model_name
-        }
+        bound_models = set()
+        for node in business_nodes:
+            bound_models.update(_binding_model_names(node))
         if bound_models and bound_models.isdisjoint(candidate_models):
             issues.append("计划绑定的语义模型与理解层推荐模型不一致。")
 
@@ -541,6 +644,8 @@ def build_runtime_status_text(runtime_context: dict[str, Any]) -> str:
         "analysis": "复杂分析",
         "metadata": "元数据查询",
         "fact_query": "事实查询",
+        "reconciliation": "对账分析",
+        "diagnosis": "诊断归因",
     }.get(mode, mode)
 
     parts = [f"已识别为{mode_label}问题"]
@@ -557,11 +662,24 @@ def build_runtime_status_text(runtime_context: dict[str, Any]) -> str:
     if periods:
         parts.append("期间：" + " / ".join(periods[:3]))
 
+    semantic_scope = understanding_result.get("semantic_scope") or {}
+    preferred_entry = ""
+    for key in ("composite_models", "atomic_models", "entity_models"):
+        models = semantic_scope.get(key) or []
+        if models:
+            preferred_entry = str(models[0])
+            break
+    if preferred_entry:
+        parts.append("优先入口模型：" + preferred_entry)
+
     models = [item for item in (runtime_context.get("relevant_models") or []) if item.get("score", 0) > 0]
     if models:
         labels = []
         for item in models[:3]:
-            tool = "语义" if item.get("recommended_tool") == "semantic_query" else "SQL"
+            tool = {
+                "semantic_query": "语义",
+                "mql_query": "MQL",
+            }.get(item.get("recommended_tool"), "SQL")
             labels.append(f"{item['label']}({tool})")
         parts.append("候选资产：" + "、".join(labels))
 

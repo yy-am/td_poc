@@ -1,0 +1,126 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg1" x1="180" y1="40" x2="1320" y2="860" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0E1C31"/>
+      <stop offset="1" stop-color="#060D17"/>
+    </linearGradient>
+    <linearGradient id="line1" x1="260" y1="0" x2="1160" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#67E3D1"/>
+      <stop offset="0.55" stop-color="#6AC7FF"/>
+      <stop offset="1" stop-color="#F6B562"/>
+    </linearGradient>
+    <filter id="shadow1" x="0" y="0" width="1600" height="900" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="28" stdDeviation="30" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" rx="36" fill="url(#bg1)"/>
+  <circle cx="210" cy="120" r="180" fill="#6AC7FF" fill-opacity="0.09"/>
+  <circle cx="1390" cy="180" r="160" fill="#69D090" fill-opacity="0.06"/>
+
+  <rect x="34" y="34" width="270" height="832" rx="28" fill="#0A1322" fill-opacity="0.82" stroke="#26374F"/>
+  <text x="64" y="92" fill="#6AC7FF" font-size="20" font-family="Segoe UI, Microsoft YaHei" letter-spacing="2">AGENT UX LAB</text>
+  <text x="64" y="148" fill="#E8F1FD" font-size="40" font-weight="700" font-family="Segoe UI, Microsoft YaHei">V1 指挥中枢图</text>
+  <text x="64" y="192" fill="#8EA4BE" font-size="19" font-family="Segoe UI, Microsoft YaHei">第一眼突出阶段职责、节点状态与可钻取关系。</text>
+
+  <rect x="64" y="256" width="210" height="88" rx="20" fill="#111F35" stroke="#29405E"/>
+  <text x="84" y="292" fill="#E8F1FD" font-size="18" font-weight="700" font-family="Segoe UI, Microsoft YaHei">Current Route</text>
+  <text x="84" y="324" fill="#6AC7FF" font-size="30" font-weight="700" font-family="Segoe UI, Microsoft YaHei">/chat</text>
+
+  <rect x="64" y="366" width="210" height="88" rx="20" fill="#111F35" stroke="#29405E"/>
+  <text x="84" y="402" fill="#E8F1FD" font-size="18" font-weight="700" font-family="Segoe UI, Microsoft YaHei">Primary Thesis</text>
+  <text x="84" y="434" fill="#67E3D1" font-size="24" font-weight="700" font-family="Segoe UI, Microsoft YaHei">Graph First</text>
+
+  <rect x="64" y="500" width="210" height="66" rx="18" fill="#13253F" stroke="#35537A"/>
+  <text x="84" y="540" fill="#E8F1FD" font-size="20" font-family="Segoe UI, Microsoft YaHei">节点可点开</text>
+  <rect x="64" y="580" width="210" height="66" rx="18" fill="#13253F" stroke="#35537A"/>
+  <text x="84" y="620" fill="#E8F1FD" font-size="20" font-family="Segoe UI, Microsoft YaHei">思考默认折叠</text>
+  <rect x="64" y="660" width="210" height="66" rx="18" fill="#13253F" stroke="#35537A"/>
+  <text x="84" y="700" fill="#E8F1FD" font-size="20" font-family="Segoe UI, Microsoft YaHei">语义 / Tool / SQL</text>
+
+  <rect x="326" y="34" width="900" height="832" rx="30" fill="#08111E" fill-opacity="0.82" stroke="#24374F" filter="url(#shadow1)"/>
+  <text x="366" y="92" fill="#E8F1FD" font-size="42" font-weight="700" font-family="Segoe UI, Microsoft YaHei">Command Graph / 指挥中枢图</text>
+  <text x="366" y="128" fill="#8EA4BE" font-size="19" font-family="Segoe UI, Microsoft YaHei">主图是舞台，不再把计划当作附属列表。右侧 Inspector 负责深信息。</text>
+
+  <rect x="366" y="162" width="160" height="74" rx="20" fill="#112339" stroke="#254863"/>
+  <text x="388" y="192" fill="#67E3D1" font-size="15" font-family="Segoe UI, Microsoft YaHei">UNDERSTANDING</text>
+  <text x="388" y="222" fill="#DDEBFA" font-size="18" font-family="Segoe UI, Microsoft YaHei">语义召回 / 实体解析</text>
+
+  <rect x="544" y="162" width="150" height="74" rx="20" fill="#112339" stroke="#254863"/>
+  <text x="566" y="192" fill="#6AC7FF" font-size="15" font-family="Segoe UI, Microsoft YaHei">PLANNER</text>
+  <text x="566" y="222" fill="#DDEBFA" font-size="18" font-family="Segoe UI, Microsoft YaHei">理解 / 计划绑定</text>
+
+  <rect x="712" y="162" width="150" height="74" rx="20" fill="#112339" stroke="#254863"/>
+  <text x="734" y="192" fill="#F6B562" font-size="15" font-family="Segoe UI, Microsoft YaHei">EXECUTOR</text>
+  <text x="734" y="222" fill="#DDEBFA" font-size="18" font-family="Segoe UI, Microsoft YaHei">语义编译 / SQL</text>
+
+  <rect x="880" y="162" width="150" height="74" rx="20" fill="#112339" stroke="#254863"/>
+  <text x="902" y="192" fill="#69D090" font-size="15" font-family="Segoe UI, Microsoft YaHei">REVIEWER</text>
+  <text x="902" y="222" fill="#DDEBFA" font-size="18" font-family="Segoe UI, Microsoft YaHei">证据审查 / Replan</text>
+
+  <rect x="1048" y="162" width="138" height="74" rx="20" fill="#112339" stroke="#254863"/>
+  <text x="1070" y="192" fill="#FFBE88" font-size="15" font-family="Segoe UI, Microsoft YaHei">ANSWER</text>
+  <text x="1070" y="222" fill="#DDEBFA" font-size="18" font-family="Segoe UI, Microsoft YaHei">结果汇总</text>
+
+  <path d="M498 370 C 610 370, 620 370, 730 370" stroke="url(#line1)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M872 370 C 960 370, 1000 420, 1046 514" stroke="url(#line1)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M738 370 C 680 468, 680 560, 748 636" stroke="#6AC7FF" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round"/>
+
+  <rect x="400" y="302" width="210" height="136" rx="24" fill="#13243A" stroke="#2E5D7A"/>
+  <rect x="400" y="432" width="210" height="6" rx="3" fill="#67E3D1"/>
+  <text x="424" y="336" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">STAGE 01</text>
+  <text x="424" y="372" fill="#EEF5FF" font-size="27" font-weight="700" font-family="Segoe UI, Microsoft YaHei">语义资产召回</text>
+  <text x="424" y="404" fill="#91A9C6" font-size="18" font-family="Segoe UI, Microsoft YaHei">entity / atomic / composite</text>
+
+  <rect x="684" y="302" width="224" height="136" rx="24" fill="#13243A" stroke="#2E5D7A"/>
+  <rect x="684" y="432" width="224" height="6" rx="3" fill="#6AC7FF"/>
+  <text x="708" y="336" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">STAGE 02</text>
+  <text x="708" y="372" fill="#EEF5FF" font-size="27" font-weight="700" font-family="Segoe UI, Microsoft YaHei">Understanding</text>
+  <text x="708" y="404" fill="#91A9C6" font-size="18" font-family="Segoe UI, Microsoft YaHei">semantic_scope / evidence</text>
+
+  <rect x="972" y="302" width="214" height="136" rx="24" fill="#13243A" stroke="#2E5D7A"/>
+  <rect x="972" y="432" width="214" height="6" rx="3" fill="#F6B562"/>
+  <text x="996" y="336" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">STAGE 03</text>
+  <text x="996" y="372" fill="#EEF5FF" font-size="27" font-weight="700" font-family="Segoe UI, Microsoft YaHei">Semantic Query</text>
+  <text x="996" y="404" fill="#91A9C6" font-size="18" font-family="Segoe UI, Microsoft YaHei">compiled SQL / evidence rows</text>
+
+  <rect x="982" y="486" width="204" height="126" rx="24" fill="#13243A" stroke="#2E5D7A"/>
+  <rect x="982" y="606" width="204" height="6" rx="3" fill="#69D090"/>
+  <text x="1006" y="520" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">STAGE 04</text>
+  <text x="1006" y="554" fill="#EEF5FF" font-size="25" font-weight="700" font-family="Segoe UI, Microsoft YaHei">Reviewer Gate</text>
+  <text x="1006" y="584" fill="#91A9C6" font-size="17" font-family="Segoe UI, Microsoft YaHei">approve / reject / replan</text>
+
+  <rect x="690" y="618" width="228" height="126" rx="24" fill="#13243A" stroke="#2E5D7A"/>
+  <rect x="690" y="738" width="228" height="6" rx="3" fill="#FFBE88"/>
+  <text x="714" y="652" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">STAGE 05</text>
+  <text x="714" y="686" fill="#EEF5FF" font-size="25" font-weight="700" font-family="Segoe UI, Microsoft YaHei">Answer Composer</text>
+  <text x="714" y="716" fill="#91A9C6" font-size="17" font-family="Segoe UI, Microsoft YaHei">final answer / drilldown</text>
+
+  <rect x="1246" y="34" width="320" height="832" rx="28" fill="#0B1525" stroke="#26374F"/>
+  <text x="1278" y="92" fill="#8EA4BE" font-size="18" font-family="Segoe UI, Microsoft YaHei">NODE INSPECTOR</text>
+  <text x="1278" y="138" fill="#EEF5FF" font-size="34" font-weight="700" font-family="Segoe UI, Microsoft YaHei">语义资产召回</text>
+
+  <rect x="1278" y="176" width="108" height="34" rx="17" fill="#16314F"/><text x="1301" y="199" fill="#CFE6FF" font-size="15" font-family="Segoe UI, Microsoft YaHei">active</text>
+  <rect x="1394" y="176" width="128" height="34" rx="17" fill="#16314F"/><text x="1417" y="199" fill="#CFE6FF" font-size="15" font-family="Segoe UI, Microsoft YaHei">Understanding</text>
+
+  <rect x="1278" y="238" width="256" height="92" rx="22" fill="#101F34" stroke="#2A4463"/>
+  <text x="1302" y="272" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">Summary</text>
+  <text x="1302" y="302" fill="#EEF5FF" font-size="18" font-family="Segoe UI, Microsoft YaHei">先召回 entity / atomic / composite</text>
+
+  <rect x="1278" y="354" width="256" height="108" rx="22" fill="#101F34" stroke="#2A4463"/>
+  <text x="1302" y="388" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">Semantic Models</text>
+  <rect x="1302" y="406" width="120" height="28" rx="14" fill="#16314F"/><text x="1318" y="425" fill="#DCEBFF" font-size="14" font-family="Segoe UI, Microsoft YaHei">dim_enterprise</text>
+  <rect x="1302" y="442" width="182" height="28" rx="14" fill="#16314F"/><text x="1318" y="461" fill="#DCEBFF" font-size="14" font-family="Segoe UI, Microsoft YaHei">fact_tax_risk_indicator</text>
+
+  <rect x="1278" y="488" width="256" height="142" rx="22" fill="#101F34" stroke="#2A4463"/>
+  <text x="1302" y="522" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">Raw Reasoning</text>
+  <text x="1302" y="558" fill="#F6B562" font-size="20" font-family="Segoe UI, Microsoft YaHei">默认折叠，可一跳展开</text>
+  <text x="1302" y="592" fill="#DCEBFF" font-size="15" font-family="Segoe UI, Microsoft YaHei">真正的模型思考过程、语义 scope、</text>
+  <text x="1302" y="616" fill="#DCEBFF" font-size="15" font-family="Segoe UI, Microsoft YaHei">tool、SQL preview、evidence</text>
+
+  <rect x="1278" y="652" width="256" height="154" rx="22" fill="#09111E" stroke="#244B56"/>
+  <text x="1302" y="686" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">SQL Preview</text>
+  <text x="1302" y="722" fill="#95F6D5" font-size="15" font-family="Consolas, monospace">SELECT model_name, kind</text>
+  <text x="1302" y="746" fill="#95F6D5" font-size="15" font-family="Consolas, monospace">FROM semantic_catalog</text>
+  <text x="1302" y="770" fill="#95F6D5" font-size="15" font-family="Consolas, monospace">WHERE business_terms ILIKE ...</text>
+</svg>

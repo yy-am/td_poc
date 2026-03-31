@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Observability Prototypes</title>
+  <style>
+    :root {
+      --bg: #08111f;
+      --panel: rgba(9, 17, 31, 0.84);
+      --panel-2: rgba(11, 24, 42, 0.92);
+      --line: rgba(125, 165, 212, 0.18);
+      --text: #e7eef8;
+      --muted: #8fa4bd;
+      --blue: #6ac7ff;
+      --cyan: #67e3d1;
+      --amber: #f6b562;
+      --green: #69d090;
+      --shadow: 0 32px 80px rgba(0, 0, 0, 0.38);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Segoe UI Variable", "Microsoft YaHei UI", "PingFang SC", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(78, 180, 255, 0.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(105, 208, 144, 0.12), transparent 28%),
+        linear-gradient(180deg, #09111d, #050b14 62%);
+    }
+
+    body { padding: 28px; }
+
+    .page {
+      display: grid;
+      grid-template-columns: 280px 1fr 360px;
+      gap: 20px;
+      min-height: calc(100vh - 56px);
+    }
+
+    .sidebar,
+    .canvas-shell,
+    .inspector {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: var(--panel);
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow);
+    }
+
+    .sidebar {
+      padding: 24px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(106, 199, 255, 0.08);
+      border: 1px solid rgba(106, 199, 255, 0.16);
+      color: var(--blue);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+      font-weight: 750;
+    }
+
+    .lead {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .variant-list,
+    .ref-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .variant-btn {
+      border: 1px solid transparent;
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text);
+      border-radius: 20px;
+      padding: 14px 14px 14px 16px;
+      text-align: left;
+      cursor: pointer;
+      transition: 180ms ease;
+    }
+
+    .variant-btn:hover,
+    .variant-btn.active {
+      border-color: rgba(106, 199, 255, 0.26);
+      background: linear-gradient(180deg, rgba(14, 31, 55, 0.94), rgba(8, 19, 33, 0.94));
+      transform: translateY(-1px);
+    }
+
+    .variant-name {
+      display: block;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .variant-copy {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .mini-stat {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .mini-stat-card,
+    .inspector-panel {
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .mini-stat-label,
+    .panel-title {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 5px;
+    }
+
+    .mini-stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .canvas-shell {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .canvas-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+    }
+
+    .canvas-title-wrap h2 {
+      margin: 0 0 6px 0;
+      font-size: 28px;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+    }
+
+    .canvas-subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      max-width: 720px;
+      line-height: 1.65;
+    }
+
+    .token-strip {
+      display: inline-flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .token,
+    .badge,
+    .mini-tag {
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 11px;
+      color: #d7e7fa;
+    }
+
+    .mini-tag {
+      padding: 4px 8px;
+      font-size: 10px;
+    }
+
+    .canvas {
+      position: relative;
+      flex: 1;
+      min-height: 720px;
+      border-radius: 26px;
+      border: 1px solid rgba(123, 161, 208, 0.14);
+      background:
+        linear-gradient(180deg, rgba(10, 22, 40, 0.88), rgba(5, 14, 24, 0.96)),
+        linear-gradient(90deg, rgba(106, 199, 255, 0.04), transparent 35%),
+        radial-gradient(circle at 25% 18%, rgba(103, 227, 209, 0.09), transparent 24%);
+      overflow: hidden;
+    }
+
+    .variant-stage {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+    }
+
+    .variant-stage.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .phase-rail {
+      position: absolute;
+      top: 22px;
+      left: 24px;
+      right: 24px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .phase-pill {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(123, 161, 208, 0.14);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .phase-pill strong {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .phase-pill span {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .connector-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .proto-node {
+      position: absolute;
+      min-width: 180px;
+      max-width: 230px;
+      padding: 14px 14px 14px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: linear-gradient(180deg, rgba(18, 34, 58, 0.95), rgba(8, 18, 33, 0.95));
+      color: var(--text);
+      cursor: pointer;
+      box-shadow: 0 18px 30px rgba(0, 0, 0, 0.25);
+      transition: 180ms ease;
+      text-align: left;
+    }
+
+    .proto-node:hover,
+    .proto-node.active {
+      border-color: rgba(106, 199, 255, 0.36);
+      transform: translateY(-2px);
+      box-shadow: 0 24px 50px rgba(2, 8, 18, 0.45);
+    }
+
+    .proto-node::before {
+      content: "";
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 3px;
+      border-radius: 999px;
+      opacity: 0.92;
+    }
+
+    .proto-node.stage-understanding::before { background: linear-gradient(90deg, #67e3d1, #6ac7ff); }
+    .proto-node.stage-planner::before { background: linear-gradient(90deg, #6ac7ff, #8aa6ff); }
+    .proto-node.stage-executor::before { background: linear-gradient(90deg, #f6b562, #ffdb8d); }
+    .proto-node.stage-reviewer::before { background: linear-gradient(90deg, #69d090, #9cf2bf); }
+    .proto-node.stage-answer::before { background: linear-gradient(90deg, #ff9f7d, #ffd59c); }
+
+    .proto-node small {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .proto-node strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.35;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .proto-node p {
+      margin: 0 0 10px 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .node-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .lane-grid {
+      position: absolute;
+      inset: 88px 26px 22px 26px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .lane {
+      position: relative;
+      border-radius: 24px;
+      border: 1px solid rgba(123, 161, 208, 0.12);
+      background: rgba(255, 255, 255, 0.02);
+      padding: 18px 14px 16px;
+      overflow: hidden;
+    }
+
+    .lane h3 {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #cfe4ff;
+    }
+
+    .lane-stack,
+    .badge-strip,
+    .evidence-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .lane .proto-node {
+      position: relative;
+      inset: auto;
+      width: 100%;
+      max-width: none;
+      min-width: 0;
+    }
+
+    .topology-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 300px;
+      transform: translate(-50%, -50%);
+      padding: 22px 24px 24px;
+      border-radius: 28px;
+      border: 1px solid rgba(106, 199, 255, 0.28);
+      background: linear-gradient(180deg, rgba(16, 38, 66, 0.96), rgba(10, 18, 34, 0.98));
+      box-shadow: 0 20px 60px rgba(4, 10, 24, 0.5);
+    }
+
+    .cluster-title {
+      position: absolute;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .cluster {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .cluster.left-top { top: 122px; left: 70px; width: 220px; }
+    .cluster.left-bottom { bottom: 88px; left: 84px; width: 220px; }
+    .cluster.right-top { top: 124px; right: 74px; width: 240px; }
+    .cluster.right-bottom { bottom: 92px; right: 92px; width: 240px; }
+
+    .cluster-title.left-top { top: 96px; left: 78px; }
+    .cluster-title.left-bottom { bottom: 284px; left: 92px; }
+    .cluster-title.right-top { top: 98px; right: 84px; }
+    .cluster-title.right-bottom { bottom: 286px; right: 100px; }
+
+    .inspector {
+      display: flex;
+      flex-direction: column;
+      padding: 22px 22px 18px;
+      gap: 18px;
+    }
+
+    .inspector-head h3 {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .inspector-head h2 {
+      margin: 0;
+      font-size: 26px;
+      line-height: 1.08;
+      letter-spacing: -0.04em;
+    }
+
+    .panel-body {
+      font-size: 13px;
+      line-height: 1.65;
+      color: #deebfa;
+    }
+
+    .badge-strip {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    details.reasoning {
+      border: 1px dashed rgba(123, 161, 208, 0.18);
+      border-radius: 18px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    details.reasoning summary {
+      cursor: pointer;
+      list-style: none;
+      font-size: 12px;
+      color: var(--amber);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    details.reasoning summary::-webkit-details-marker { display: none; }
+
+    .reasoning-copy {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(123, 161, 208, 0.14);
+      color: #b8cade;
+      font-size: 12px;
+      line-height: 1.75;
+      white-space: pre-wrap;
+    }
+
+    pre.sql-preview {
+      margin: 0;
+      padding: 12px 14px;
+      border-radius: 18px;
+      overflow: auto;
+      background: #071120;
+      color: #94f7d4;
+      font-size: 11px;
+      line-height: 1.65;
+      border: 1px solid rgba(103, 227, 209, 0.12);
+      font-family: "Cascadia Code", "Consolas", monospace;
+    }
+
+    .evidence-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .evidence-list li {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 10px;
+      align-items: start;
+      color: #d9e7f8;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .evidence-list li::before {
+      content: "*";
+      display: block;
+      color: var(--green);
+      font-size: 18px;
+      line-height: 1;
+      transform: translateY(-1px);
+    }
+
+    .insight {
+      font-size: 12px;
+      line-height: 1.65;
+      color: var(--muted);
+    }
+
+    .reference-link {
+      color: #bfe9ff;
+      text-decoration: none;
+    }
+
+    .reference-link:hover { text-decoration: underline; }
+
+    @media (max-width: 1280px) {
+      body { padding: 18px; }
+      .page { grid-template-columns: 1fr; }
+      .canvas { min-height: 860px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <div>
+        <div class="eyebrow">Agent UX Lab</div>
+        <h1>Execution Graphs With Real Drilldown</h1>
+      </div>
+
+      <p class="lead">
+        目标不是把计划做成更长的列表，而是把
+        <strong>阶段、流向、语义模型、tool、SQL、证据</strong>
+        全都放进一张可钻取的图里。
+      </p>
+
+      <div class="mini-stat">
+        <div class="mini-stat-card">
+          <div class="mini-stat-label">Current Route</div>
+          <div class="mini-stat-value">/chat</div>
+        </div>
+        <div class="mini-stat-card">
+          <div class="mini-stat-label">Prototype Count</div>
+          <div class="mini-stat-value">3</div>
+        </div>
+      </div>
+
+      <div class="variant-list">
+        <button class="variant-btn active" data-variant-btn="v1">
+          <span class="variant-name">V1 Command Graph / 指挥中枢图</span>
+          <span class="variant-copy">适合汇报演示。阶段清晰，节点强，右侧检视器最完整。</span>
+        </button>
+        <button class="variant-btn" data-variant-btn="v2">
+          <span class="variant-name">V2 Swimlane Cinema / 执行泳道图</span>
+          <span class="variant-copy">适合强调每个阶段“到底在做啥”，过程感最强。</span>
+        </button>
+        <button class="variant-btn" data-variant-btn="v3">
+          <span class="variant-name">V3 Evidence Topology / 证据拓扑图</span>
+          <span class="variant-copy">适合突出语义模型、tool、数据证据之间的关系。</span>
+        </button>
+      </div>
+
+      <div class="inspector-panel">
+        <div class="panel-title">Online References</div>
+        <div class="insight ref-list">
+          <a class="reference-link" href="https://docs.langchain.com/langsmith/observability-quickstart" target="_blank" rel="noreferrer">LangSmith Observability</a>
+          <a class="reference-link" href="https://docs.langchain.com/langgraph-platform/langgraph-studio" target="_blank" rel="noreferrer">LangGraph Studio</a>
+          <a class="reference-link" href="https://docs.n8n.io/workflows/" target="_blank" rel="noreferrer">n8n Workflow Editor</a>
+          <a class="reference-link" href="https://platform.openai.com/docs/guides/agents" target="_blank" rel="noreferrer">OpenAI Agents</a>
+        </div>
+      </div>
+
+      <div class="inspector-panel">
+        <div class="panel-title">Design Notes</div>
+        <div class="insight">
+          共同原则：
+          <br />1. 图就是主界面，不是附属小窗。
+          <br />2. 节点只显示最重要的信息，深信息统一进 Inspector。
+          <br />3. 思考过程默认折叠，但必须一跳可见。
+        </div>
+      </div>
+    </aside>
+
+    <section class="canvas-shell">
+      <div class="canvas-top">
+        <div class="canvas-title-wrap">
+          <h2 id="canvas-title">V1 Command Graph / 指挥中枢图</h2>
+          <div class="canvas-subtitle" id="canvas-subtitle">
+            以阶段 rail + 发光节点图为主，第一眼就能看到 Understanding、Planner、Executor、Reviewer 的职责和推进状态。
+          </div>
+        </div>
+        <div class="token-strip">
+          <span class="token">clickable nodes</span>
+          <span class="token">collapsed reasoning</span>
+          <span class="token">semantic + tool + sql</span>
+          <span class="token">evidence drilldown</span>
+        </div>
+      </div>
+
+      <div class="canvas">
+        <section class="variant-stage active" data-variant-stage="v1">
+          <div class="phase-rail">
+            <div class="phase-pill"><strong>Understanding</strong><span>语义召回、意图识别、实体解析</span></div>
+            <div class="phase-pill"><strong>Planner</strong><span>生成语义绑定计划图与依赖关系</span></div>
+            <div class="phase-pill"><strong>Executor</strong><span>语义编译、tool 调用、SQL 落库</span></div>
+            <div class="phase-pill"><strong>Reviewer</strong><span>证据校验、replan、结论审查</span></div>
+            <div class="phase-pill"><strong>Answer</strong><span>结果汇总、证据引用、最终回答</span></div>
+          </div>
+
+          <svg class="connector-layer" viewBox="0 0 1200 760" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="traceLine" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#67E3D1" />
+                <stop offset="50%" stop-color="#6AC7FF" />
+                <stop offset="100%" stop-color="#F6B562" />
+              </linearGradient>
+            </defs>
+            <path d="M190 220 C 320 220, 330 220, 450 220" stroke="url(#traceLine)" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.8"/>
+            <path d="M570 220 C 700 220, 710 220, 840 220" stroke="url(#traceLine)" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.8"/>
+            <path d="M960 220 C 1070 220, 1065 340, 955 420" stroke="url(#traceLine)" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.7"/>
+            <path d="M450 220 C 380 320, 370 420, 440 510" stroke="#4e91ff" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.4"/>
+            <path d="M840 220 C 760 330, 755 425, 830 510" stroke="#f6b562" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.4"/>
+          </svg>
+
+          <button class="proto-node stage-understanding active" style="top: 164px; left: 84px;" data-node-id="semantic-retrieval" data-variant="v1">
+            <small>Stage 01</small>
+            <strong>语义资产召回</strong>
+            <p>按实体 / 原子 / 复合模型召回候选语义资产。</p>
+            <div class="node-meta">
+              <span class="mini-tag">dim_enterprise</span>
+              <span class="mini-tag">fact_tax_risk_indicator</span>
+            </div>
+          </button>
+
+          <button class="proto-node stage-planner" style="top: 164px; left: 420px;" data-node-id="understanding" data-variant="v1">
+            <small>Stage 02</small>
+            <strong>Understanding + Grounding</strong>
+            <p>结构化问题，形成 semantic scope 和执行约束。</p>
+            <div class="node-meta">
+              <span class="mini-tag">semantic_scope</span>
+              <span class="mini-tag">entity resolver</span>
+            </div>
+          </button>
+
+          <button class="proto-node stage-executor" style="top: 164px; left: 804px;" data-node-id="executor-query" data-variant="v1">
+            <small>Stage 03</small>
+            <strong>Semantic Query Node</strong>
+            <p>按语义绑定编译 SQL，执行风控指标与阈值查询。</p>
+            <div class="node-meta">
+              <span class="mini-tag">semantic_query</span>
+              <span class="mini-tag">compiled SQL</span>
+            </div>
+          </button>
+
+          <button class="proto-node stage-reviewer" style="top: 384px; right: 78px;" data-node-id="reviewer-check" data-variant="v1">
+            <small>Stage 04</small>
+            <strong>Reviewer Evidence Gate</strong>
+            <p>审查口径一致性、风险等级、证据是否闭环。</p>
+            <div class="node-meta">
+              <span class="mini-tag">evidence</span>
+              <span class="mini-tag">replan</span>
+            </div>
+          </button>
+
+          <button class="proto-node stage-answer" style="bottom: 84px; left: 422px;" data-node-id="answer-node" data-variant="v1">
+            <small>Stage 05</small>
+            <strong>Answer Composer</strong>
+            <p>输出最终回答、风险摘要、证据卡片和 drilldown 入口。</p>
+            <div class="node-meta">
+              <span class="mini-tag">markdown</span>
+              <span class="mini-tag">evidence quotes</span>
+            </div>
+          </button>
+        </section>
+
+        <section class="variant-stage" data-variant-stage="v2">
+          <div class="lane-grid">
+            <div class="lane">
+              <h3>Understanding</h3>
+              <div class="lane-stack">
+                <button class="proto-node stage-understanding active" data-node-id="semantic-retrieval" data-variant="v2">
+                  <small>Lane 01</small>
+                  <strong>语义召回</strong>
+                  <p>区分实体模型、原子事实模型、复合主题模型。</p>
+                  <div class="node-meta">
+                    <span class="mini-tag">entity</span>
+                    <span class="mini-tag">atomic</span>
+                  </div>
+                </button>
+                <button class="proto-node stage-understanding" data-node-id="entity-resolve" data-variant="v2">
+                  <small>Lane 01</small>
+                  <strong>实体解析</strong>
+                  <p>把链龙商贸映射为执行过滤可用的 taxpayer_id。</p>
+                  <div class="node-meta">
+                    <span class="mini-tag">resolver</span>
+                    <span class="mini-tag">confidence</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div class="lane">
+              <h3>Planner</h3>
+              <div class="lane-stack">
+                <button class="proto-node stage-planner" data-node-id="understanding" data-variant="v2">
+                  <small>Lane 02</small>
+                  <strong>语义理解</strong>
+                  <p>产出 understanding_result 与 required_evidence。</p>
+                  <div class="node-meta">
+                    <span class="mini-tag">intent</span>
+                    <span class="mini-tag">evidence</span>
+                  </div>
+                </button>
+                <button class="proto-node stage-planner" data-node-id="planner-bind" data-variant="v2">
+                  <small>Lane 02</small>
+                  <strong>Plan + semantic binding</strong>
+                  <p>生成带 entry/supporting models 的节点计划。</p>
+                  <div class="node-meta">
+                    <span class="mini-tag">entry_model</span>
+                    <span class="mini-tag">supporting_models</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div class="lane">
+              <h3>Executor</h3>
+              <div class="lane-stack">
+                <button class="proto-node stage-executor" data-node-id="executor-query" data-variant="v2">
+                  <small>Lane 03</small>
+                  <strong>编译查询</strong>
+                  <p>根据 semantic_binding 生成 SQL，并保留 SQL preview。</p>
+                  <div class="node-meta">
+                    <span class="mini-tag">semantic_query</span>
+                    <span class="mini-tag">SQL preview</span>
+                  </div>
+                </button>
+                <button class="proto-node stage-executor" data-node-id="evidence-materialize" data-variant="v2">
+                  <small>Lane 03</small>
+                  <strong>证据物化</strong>
+                  <p>把风险值、阈值、等级、告警说明整理成 evidence cards。</p>
+                  <div class="node-meta">
+                    <span class="mini-tag">table</span>
+                    <span class="mini-tag">evidence</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div class="lane">
+              <h3>Reviewer / Answer</h3>
+              <div class="lane-stack">
+                <button class="proto-node stage-reviewer" data-node-id="reviewer-check" data-variant="v2">
+                  <small>Lane 04</small>
+                  <strong>审查与重规划</strong>
+                  <p>证据不足则回写问题点，触发局部 replan。</p>
+                  <div class="node-meta">
+                    <span class="mini-tag">approve</span>
+                    <span class="mini-tag">reject</span>
+                  </div>
+                </button>
+                <button class="proto-node stage-answer" data-node-id="answer-node" data-variant="v2">
+                  <small>Lane 04</small>
+                  <strong>最终回答</strong>
+                  <p>输出结论卡片，并保留节点级回看入口。</p>
+                  <div class="node-meta">
+                    <span class="mini-tag">answer</span>
+                    <span class="mini-tag">drilldown</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="variant-stage" data-variant-stage="v3">
+          <svg class="connector-layer" viewBox="0 0 1200 760" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M370 214 C 460 252, 505 300, 550 350" stroke="#67E3D1" stroke-width="2.8" fill="none" opacity="0.58"/>
+            <path d="M395 564 C 470 512, 510 468, 548 418" stroke="#6AC7FF" stroke-width="2.8" fill="none" opacity="0.55"/>
+            <path d="M845 224 C 760 265, 710 305, 655 352" stroke="#F6B562" stroke-width="2.8" fill="none" opacity="0.58"/>
+            <path d="M845 562 C 770 512, 715 470, 654 414" stroke="#69D090" stroke-width="2.8" fill="none" opacity="0.58"/>
+          </svg>
+
+          <div class="topology-center">
+            <div class="eyebrow" style="margin-bottom: 12px;">Center Query</div>
+            <h2 style="margin: 0 0 12px 0; font-size: 26px; line-height: 1.08; letter-spacing: -0.04em;">查看链龙商贸的税务风险指标预警</h2>
+            <div class="canvas-subtitle" style="max-width: none;">
+              中心展示用户问题，四周分别围绕语义模型、执行工具、证据物化和审查反馈形成拓扑视图。
+            </div>
+          </div>
+
+          <div class="cluster-title left-top">Semantic Models</div>
+          <div class="cluster left-top">
+            <button class="proto-node stage-understanding active" data-node-id="semantic-retrieval" data-variant="v3">
+              <small>Cluster</small>
+              <strong>dim_enterprise</strong>
+              <p>企业实体主数据与 resolver。</p>
+            </button>
+            <button class="proto-node stage-understanding" data-node-id="understanding" data-variant="v3">
+              <small>Cluster</small>
+              <strong>fact_tax_risk_indicator</strong>
+              <p>风险指标原子事实。</p>
+            </button>
+          </div>
+
+          <div class="cluster-title right-top">Execution</div>
+          <div class="cluster right-top">
+            <button class="proto-node stage-executor" data-node-id="executor-query" data-variant="v3">
+              <small>Cluster</small>
+              <strong>semantic_query</strong>
+              <p>基于绑定模型生成 SQL 并执行。</p>
+            </button>
+            <button class="proto-node stage-executor" data-node-id="sql-fallback" data-variant="v3">
+              <small>Cluster</small>
+              <strong>sql_executor fallback</strong>
+              <p>仅在语义模型不足时穿透。</p>
+            </button>
+          </div>
+
+          <div class="cluster-title left-bottom">Planning</div>
+          <div class="cluster left-bottom">
+            <button class="proto-node stage-planner" data-node-id="planner-bind" data-variant="v3">
+              <small>Cluster</small>
+              <strong>semantic binding</strong>
+              <p>entry model + supporting models + filters。</p>
+            </button>
+          </div>
+
+          <div class="cluster-title right-bottom">Evidence & Review</div>
+          <div class="cluster right-bottom">
+            <button class="proto-node stage-reviewer" data-node-id="reviewer-check" data-variant="v3">
+              <small>Cluster</small>
+              <strong>evidence gate</strong>
+              <p>证据是否足够支持高风险结论。</p>
+            </button>
+            <button class="proto-node stage-answer" data-node-id="answer-node" data-variant="v3">
+              <small>Cluster</small>
+              <strong>answer composer</strong>
+              <p>汇总回答与 drilldown。</p>
+            </button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <aside class="inspector">
+      <div class="inspector-head">
+        <h3>Node Inspector</h3>
+        <h2 id="inspector-title">语义资产召回</h2>
+      </div>
+
+      <div class="badge-strip" id="inspector-meta"></div>
+
+      <div class="inspector-panel">
+        <div class="panel-title">Node Summary</div>
+        <div class="panel-body" id="summary-copy"></div>
+      </div>
+
+      <div class="inspector-panel">
+        <div class="panel-title">Semantic Models</div>
+        <div class="badge-strip" id="semantic-badges"></div>
+      </div>
+
+      <div class="inspector-panel">
+        <div class="panel-title">Tools</div>
+        <div class="badge-strip" id="tool-badges"></div>
+      </div>
+
+      <div class="inspector-panel">
+        <div class="panel-title">Evidence</div>
+        <ul class="evidence-list" id="evidence-list"></ul>
+      </div>
+
+      <div class="inspector-panel">
+        <div class="panel-title">SQL Preview</div>
+        <pre class="sql-preview" id="sql-preview"></pre>
+      </div>
+
+      <details class="reasoning" id="reasoning-panel">
+        <summary>展开 Raw Reasoning / 展开真实思考过程</summary>
+        <div class="reasoning-copy" id="reasoning-copy"></div>
+      </details>
+    </aside>
+  </div>
+
+  <script>
+    const variantMeta = {
+      v1: {
+        title: 'V1 Command Graph / 指挥中枢图',
+        subtitle: '以阶段 rail + 发光节点图为主，第一眼就能看到 Understanding、Planner、Executor、Reviewer 的职责和推进状态。'
+      },
+      v2: {
+        title: 'V2 Swimlane Cinema / 执行泳道图',
+        subtitle: '以泳道方式强化阶段职责和先后关系，最适合解释“每个阶段到底做了什么”。'
+      },
+      v3: {
+        title: 'V3 Evidence Topology / 证据拓扑图',
+        subtitle: '把问题、语义模型、执行工具和证据之间的关系拉成拓扑，更适合强调语义中心化和证据闭环。'
+      }
+    }
+
+    const nodeData = {
+      'semantic-retrieval': {
+        title: '语义资产召回',
+        meta: ['Understanding', 'active', 'click to inspect'],
+        summary: '先按实体模型、原子事实模型、复合主题模型三个层次召回候选资产，避免 Planner 直接从物理表猜起。',
+        semantic: ['dim_enterprise', 'fact_tax_risk_indicator', 'mart_tax_risk_alert'],
+        tools: ['semantic catalog', 'entity resolver', 'schema grounding'],
+        evidence: ['候选实体模型：dim_enterprise', '候选原子模型：fact_tax_risk_indicator', '候选复合模型：mart_tax_risk_alert'],
+        sql: `/* no direct SQL here */
+SELECT model_name, kind, domain
+FROM semantic_catalog
+WHERE business_terms ILIKE '%风险预警%'
+ORDER BY score DESC;`,
+        reasoning: '识别问题主题是“税务风险指标预警”。\n优先命中 risk 域语义模型。\n因为用户输入的是企业名称，必须带入实体解析能力。\n如果只召回 enterprise_info 而不召回 risk facts，后续计划会退化成主数据 SQL。'
+      },
+      'entity-resolve': {
+        title: '实体解析',
+        meta: ['Understanding', 'resolver', 'entity'],
+        summary: '企业解析在语义层内部完成，不应变成用户可见的主任务节点。这里展示的是 Inspector 中的内部子步骤。',
+        semantic: ['dim_enterprise'],
+        tools: ['resolver'],
+        evidence: ['输入实体：链龙商贸', '输出执行键：taxpayer_id', '保留名称与执行键双轨过滤'],
+        sql: 'SELECT taxpayer_id\nFROM enterprise_info\nWHERE enterprise_name = :enterprise_name\nLIMIT 1;',
+        reasoning: '这是内部解析步骤。\n应该在 Inspector 可见，但默认不在主图中抢走主题。\n主图应该围绕风险预警主题，而不是围绕企业主数据。'
+      },
+      'understanding': {
+        title: 'Understanding + Grounding',
+        meta: ['Planner', 'semantic scope', 'structured intent'],
+        summary: '把用户问题转成 structured intent，包括 semantic_scope、required_evidence 和 resolution_requirements。',
+        semantic: ['dim_enterprise', 'fact_tax_risk_indicator', 'mart_tax_risk_alert'],
+        tools: ['llm understanding', 'grounding validator'],
+        evidence: ['intent_summary: 查看链龙商贸当前税务风险指标预警', 'required_evidence: 风险值 / 阈值 / 风险等级 / 预警说明', 'resolution_requirements: enterprise_name -> taxpayer_id'],
+        sql: '/* no direct SQL here */\n/* grounding works on semantic scope, schema, and entity rules */',
+        reasoning: '本轮问题不是 metadata 问题。\n它不是单纯查企业信息，而是风险主题 fact query。\n主模型应优先是风险预警主题模型，实体解析只是支持动作。'
+      },
+      'planner-bind': {
+        title: 'Plan + Semantic Binding',
+        meta: ['Planner', 'plan graph', 'binding'],
+        summary: 'Planner 输出的不是“先查哪张表”，而是“本节点绑定哪个主语义模型、哪些 supporting models、哪些过滤条件和证据需求”。',
+        semantic: ['mart_tax_risk_alert', 'dim_enterprise', 'fact_tax_risk_indicator'],
+        tools: ['planner'],
+        evidence: ['entry_model = mart_tax_risk_alert', 'supporting_models = dim_enterprise, fact_tax_risk_indicator', 'entity_filters.enterprise_name = 链龙商贸'],
+        sql: '/* plan layer does not emit final SQL */\nsemantic_binding = {\n  entry_model: "mart_tax_risk_alert",\n  supporting_models: ["dim_enterprise", "fact_tax_risk_indicator"]\n}',
+        reasoning: '如果 Planner 产出的是 enterprise_info 精确匹配 SQL，说明计划被物理层劫持了。\n正确做法是把 enterprise_name 保留在 entity_filters，把解析后的 taxpayer_id 放进 resolved_filters。'
+      },
+      'executor-query': {
+        title: 'Semantic Query Node',
+        meta: ['Executor', 'semantic_query', 'compiled SQL'],
+        summary: 'Executor 优先走 semantic_query。真正的 SQL 由语义绑定和语义编译器生成，而不是直接从用户问题硬写出来。',
+        semantic: ['mart_tax_risk_alert', 'fact_tax_risk_indicator'],
+        tools: ['semantic_query', 'sql compiler'],
+        evidence: ['返回字段：indicator_name / indicator_value / threshold_value / risk_level / alert_message', '实体过滤：resolved_filters.taxpayer_id', '保留 SQL preview 以便节点级排错'],
+        sql: 'SELECT ent.enterprise_name,\n       risk.tax_period,\n       risk.indicator_name,\n       risk.indicator_value,\n       risk.threshold_value,\n       risk.risk_level,\n       risk.alert_message\nFROM tax_risk_indicators AS risk\nLEFT JOIN enterprise_info AS ent\n  ON risk.taxpayer_id = ent.taxpayer_id\nWHERE risk.taxpayer_id = :taxpayer_id\nORDER BY risk.risk_level DESC, risk.indicator_name ASC;',
+        reasoning: '执行层最终还是会落到 SQL。\n区别不在于是否执行 SQL，而在于 SQL 的来源是否来自语义绑定。\n这里应该展示 semantic_binding、compiled SQL 和 evidence rows 三者的关系。'
+      },
+      'sql-fallback': {
+        title: 'SQL Fallback',
+        meta: ['Executor', 'fallback', 'exception path'],
+        summary: '只有在语义模型没有覆盖某个字段、某个 join 或某个异常明细时，才允许退回显式 SQL。',
+        semantic: ['fact_tax_risk_indicator'],
+        tools: ['sql_executor'],
+        evidence: ['fallback reason: composite model missing field', '保留 fallback reason，避免 SQL 退化成默认路径'],
+        sql: `SELECT *
+FROM tax_risk_indicators
+WHERE taxpayer_id = :taxpayer_id
+  AND risk_level IN ('高', '中');`,
+        reasoning: 'fallback 是异常路径，不是默认路径。\nUI 上应该把 fallback 强调成“降级执行”，而不是和正常节点混成一样的观感。'
+      },
+      'evidence-materialize': {
+        title: '证据物化',
+        meta: ['Executor', 'evidence', 'cards'],
+        summary: '把执行结果重组为 Evidence Cards，便于 Reviewer 和最终 Answer 直接引用。',
+        semantic: ['fact_tax_risk_indicator'],
+        tools: ['table renderer', 'evidence packer'],
+        evidence: ['高风险指标 2 项', '风险阈值越界 1 项', '预警说明 2 条'],
+        sql: '/* evidence cards generated from semantic_query result */',
+        reasoning: '让 Evidence 先成为中间产物，可以把 SQL、原始表格和最终回答之间的距离拉短。\n这也是 Inspector 应该补强的一层。'
+      },
+      'reviewer-check': {
+        title: 'Reviewer Evidence Gate',
+        meta: ['Reviewer', 'approve', 'evidence gate'],
+        summary: 'Reviewer 不只是审查“看起来像对的”，而是审查实体过滤是否正确、风险等级是否充分、证据是否支撑结论。',
+        semantic: ['mart_tax_risk_alert'],
+        tools: ['reviewer'],
+        evidence: ['实体过滤正确：是', '语义口径一致：是', '高风险结论证据充足：是'],
+        sql: '/* reviewer consumes node result + evidence, not raw SQL generation */',
+        reasoning: '如果 evidence 不足，应返回 issues 和 suggestions，并把图上的节点打成 warning / reject 状态。\nUI 上 Reviewer 应该有明显的门禁感。'
+      },
+      'answer-node': {
+        title: 'Answer Composer',
+        meta: ['Answer', 'final report', 'drilldown'],
+        summary: '最终回答应展示风险摘要，并允许回跳到对应节点查看 raw reasoning、语义模型、tool、SQL 和证据。',
+        semantic: ['mart_tax_risk_alert'],
+        tools: ['answer renderer', 'markdown'],
+        evidence: ['最终结论：链龙商贸存在高风险税务指标预警', '证据来源：风险指标 / 阈值 / 预警说明', '支持 drilldown 到 executor 与 reviewer'],
+        sql: '/* answer stage references evidence rather than re-running SQL */',
+        reasoning: '最终回答区不应该与图断开。\n更合理的方式是让 answer 与 graph 共存，点击 answer 中的证据引用时，图上对应节点同步高亮。'
+      }
+    }
+
+    let currentVariant = 'v1'
+    let currentNodeId = 'semantic-retrieval'
+
+    const variantButtons = document.querySelectorAll('[data-variant-btn]')
+    const stages = document.querySelectorAll('[data-variant-stage]')
+    const nodes = document.querySelectorAll('.proto-node')
+
+    function renderInspector(nodeId) {
+      const data = nodeData[nodeId]
+      if (!data) return
+      document.getElementById('inspector-title').textContent = data.title
+      document.getElementById('summary-copy').textContent = data.summary
+      document.getElementById('sql-preview').textContent = data.sql
+      document.getElementById('reasoning-copy').textContent = data.reasoning
+      document.getElementById('reasoning-panel').open = false
+
+      const metaWrap = document.getElementById('inspector-meta')
+      const semanticWrap = document.getElementById('semantic-badges')
+      const toolWrap = document.getElementById('tool-badges')
+      const evidenceWrap = document.getElementById('evidence-list')
+      metaWrap.innerHTML = ''
+      semanticWrap.innerHTML = ''
+      toolWrap.innerHTML = ''
+      evidenceWrap.innerHTML = ''
+
+      data.meta.forEach(item => {
+        const badge = document.createElement('span')
+        badge.className = 'badge'
+        badge.textContent = item
+        metaWrap.appendChild(badge)
+      })
+      data.semantic.forEach(item => {
+        const badge = document.createElement('span')
+        badge.className = 'badge'
+        badge.textContent = item
+        semanticWrap.appendChild(badge)
+      })
+      data.tools.forEach(item => {
+        const badge = document.createElement('span')
+        badge.className = 'badge'
+        badge.textContent = item
+        toolWrap.appendChild(badge)
+      })
+      data.evidence.forEach(item => {
+        const li = document.createElement('li')
+        li.textContent = item
+        evidenceWrap.appendChild(li)
+      })
+    }
+
+    function renderVariant(variant) {
+      currentVariant = variant
+      document.getElementById('canvas-title').textContent = variantMeta[variant].title
+      document.getElementById('canvas-subtitle').textContent = variantMeta[variant].subtitle
+      variantButtons.forEach(button => {
+        button.classList.toggle('active', button.getAttribute('data-variant-btn') === variant)
+      })
+      stages.forEach(stage => {
+        stage.classList.toggle('active', stage.getAttribute('data-variant-stage') === variant)
+      })
+      nodes.forEach(node => {
+        const active = node.getAttribute('data-variant') === variant && node.getAttribute('data-node-id') === currentNodeId
+        node.classList.toggle('active', active)
+      })
+    }
+
+    variantButtons.forEach(button => {
+      button.addEventListener('click', () => renderVariant(button.getAttribute('data-variant-btn')))
+    })
+    nodes.forEach(node => {
+      node.addEventListener('click', () => {
+        currentNodeId = node.getAttribute('data-node-id')
+        renderVariant(currentVariant)
+        renderInspector(currentNodeId)
+      })
+    })
+
+    renderVariant(currentVariant)
+    renderInspector(currentNodeId)
+  </script>
+</body>
+</html>

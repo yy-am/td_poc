@@ -100,5 +100,13 @@ const currentRoute = computed(() => route.path)
   padding: 0;
   background-color: #0f0f23;
   overflow: auto;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+}
+
+.app-main > * {
+  flex: 1;
+  min-height: 0;
 }
 </style>

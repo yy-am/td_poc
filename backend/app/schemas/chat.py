@@ -61,6 +61,29 @@ class SemanticModelResponse(BaseModel):
     source_table: str
     model_type: str
     status: str
+    yaml_definition: Optional[str] = None
+    has_yaml_definition: bool = False
+    semantic_kind: Optional[str] = None
+    semantic_domain: Optional[str] = None
+    semantic_grain: Optional[str] = None
+    entry_enabled: bool = False
+    source_count: int = 0
+    join_count: int = 0
+    business_terms: list[str] = Field(default_factory=list)
+    intent_aliases: list[str] = Field(default_factory=list)
+    analysis_patterns: list[str] = Field(default_factory=list)
+    evidence_requirements: list[str] = Field(default_factory=list)
+    fallback_policy: str = "fallback_to_sql"
+    dimensions: list[str] = Field(default_factory=list)
+    metrics: list[str] = Field(default_factory=list)
+    entities: dict[str, Any] = Field(default_factory=dict)
+    time: dict[str, Any] = Field(default_factory=dict)
+    supports_entity_resolution: bool = False
+    relationship_graph: list[dict[str, Any]] = Field(default_factory=list)
+    metric_lineage: list[dict[str, Any]] = Field(default_factory=list)
+    detail_fields: list[dict[str, Any]] = Field(default_factory=list)
+    materialization_policy: dict[str, Any] = Field(default_factory=dict)
+    query_hints: dict[str, Any] = Field(default_factory=dict)
 
     class Config:
         from_attributes = True

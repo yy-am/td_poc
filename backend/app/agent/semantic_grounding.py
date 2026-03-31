@@ -16,7 +16,8 @@ from app.agent.runtime_context import (
 from app.database import AsyncSessionLocal
 from app.models.enterprise import EnterpriseInfo
 from app.models.semantic import SysSemanticModel
-from app.semantic.compiler import load_semantic_definition
+from app.semantic.compiler_v2 import SemanticDefinitionError, load_semantic_definition, normalize_definition
+from app.semantic.catalog import extract_semantic_metadata
 
 
 def _string_list(value: Any) -> list[str]:
@@ -30,69 +31,114 @@ def _string_list(value: Any) -> list[str]:
     return items
 
 
+def _flatten_semantic_terms(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+
+    items: list[str] = []
+    for item in value:
+        if isinstance(item, dict):
+            for key in ("name", "label", "column"):
+                text = str(item.get(key) or "").strip()
+                if text and text not in items:
+                    items.append(text)
+            continue
+        text = str(item or "").strip()
+        if text and text not in items:
+            items.append(text)
+    return items
+
+
+def _semantic_term_pairs(value: Any) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        return []
+
+    terms: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for item in value:
+        if isinstance(item, dict):
+            name = str(item.get("name") or item.get("column") or "").strip()
+            label = str(item.get("label") or "").strip()
+        else:
+            text = str(item or "").strip()
+            if not text:
+                continue
+            name = text
+            label = ""
+
+        key = name or label
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        terms.append(
+            {
+                "name": name,
+                "label": label,
+            }
+        )
+    return terms
+
+
 def _extract_model_metadata(
     *,
     name: str,
     label: str,
     description: str,
     source_table: str,
+    model_type: str = "physical",
     yaml_definition: str | None,
     status: str,
 ) -> dict[str, Any]:
-    metadata = {
-        "name": name,
-        "label": label,
-        "description": description or "",
-        "source_table": source_table,
-        "status": status,
-        "has_yaml_definition": bool((yaml_definition or "").strip()),
-        "recommended_tool": "semantic_query" if (yaml_definition or "").strip() else "sql_executor",
-        "business_terms": [],
-        "intent_aliases": [],
-        "dimensions": [],
-        "metrics": [],
-        "analysis_patterns": [],
-        "time": {},
-        "entities": {},
-    }
-
-    if not yaml_definition:
-        return metadata
+    metadata = extract_semantic_metadata(
+        name=name,
+        label=label,
+        description=description,
+        source_table=source_table,
+        model_type=model_type,
+        yaml_definition=yaml_definition,
+        status=status,
+    )
+    if metadata["has_yaml_definition"]:
+        preferred_lane = str((metadata.get("query_hints") or {}).get("preferred_lane") or "").strip().lower()
+        if metadata.get("semantic_kind") == "composite_analysis" and preferred_lane == "metric":
+            metadata["recommended_tool"] = "mql_query"
+        else:
+            metadata["recommended_tool"] = "semantic_query"
+    else:
+        metadata["recommended_tool"] = "sql_executor"
+    metadata["intent_aliases"] = _string_list(metadata.get("intent_aliases"))
+    metadata["analysis_patterns"] = _string_list(metadata.get("analysis_patterns"))
+    metadata["business_terms"] = _string_list(metadata.get("business_terms"))
 
     try:
-        loaded = load_semantic_definition(yaml_definition)
-    except Exception:
-        return metadata
-
-    metadata["business_terms"] = _string_list(loaded.get("business_terms"))
-    metadata["intent_aliases"] = _string_list(loaded.get("intent_aliases"))
-    metadata["analysis_patterns"] = _string_list(loaded.get("analysis_patterns"))
-    metadata["time"] = loaded.get("time") if isinstance(loaded.get("time"), dict) else {}
-    metadata["entities"] = loaded.get("entities") if isinstance(loaded.get("entities"), dict) else {}
-
-    for item in loaded.get("dimensions", []) or []:
-        if isinstance(item, str):
-            metadata["dimensions"].append(item)
-            continue
-        if not isinstance(item, dict):
-            continue
-        for key in ("name", "label", "column"):
-            value = str(item.get(key) or "").strip()
-            if value and value not in metadata["dimensions"]:
-                metadata["dimensions"].append(value)
-
-    for item in loaded.get("metrics", []) or []:
-        if isinstance(item, str):
-            metadata["metrics"].append(item)
-            continue
-        if not isinstance(item, dict):
-            continue
-        for key in ("name", "label", "column"):
-            value = str(item.get(key) or "").strip()
-            if value and value not in metadata["metrics"]:
-                metadata["metrics"].append(value)
+        normalized = normalize_definition(
+            load_semantic_definition(yaml_definition),
+            fallback_name=name,
+            fallback_label=label,
+            fallback_table=source_table,
+        )
+        metadata["dimension_terms"] = _semantic_term_pairs(normalized.get("dimensions"))
+        metadata["metric_terms"] = _semantic_term_pairs(normalized.get("metrics"))
+        metadata["dimensions"] = _flatten_semantic_terms(normalized.get("dimensions"))
+        metadata["metrics"] = _flatten_semantic_terms(normalized.get("metrics"))
+        metadata["detail_fields"] = (
+            list(normalized.get("detail_fields") or [])
+            if isinstance(normalized.get("detail_fields"), list)
+            else []
+        )
+    except SemanticDefinitionError:
+        metadata["dimension_terms"] = []
+        metadata["metric_terms"] = []
+        metadata["dimensions"] = []
+        metadata["metrics"] = []
 
     return metadata
+
+
+def _is_entry_enabled(model: dict[str, Any]) -> bool:
+    if not model.get("has_yaml_definition"):
+        return True
+    return bool(model.get("entry_enabled", True))
 
 
 def _score_model(
@@ -103,6 +149,9 @@ def _score_model(
 ) -> tuple[int, list[str]]:
     matched: list[str] = []
     score = 0
+    query_text = str(user_query or "").strip().lower()
+    entry_enabled = _is_entry_enabled(model)
+    matched_intent_signal = False
     haystack = " ".join(
         [
             model.get("name", ""),
@@ -125,6 +174,21 @@ def _score_model(
             score += 3 if len(token) >= 3 else 1
             matched.append(keyword)
 
+    phrase_terms = (
+        _string_list(model.get("business_terms"))
+        + _string_list(model.get("intent_aliases"))
+        + _string_list(model.get("analysis_patterns"))
+    )
+    for phrase in phrase_terms:
+        token = str(phrase or "").strip().lower()
+        if len(token) < 3:
+            continue
+        if token in query_text and phrase not in matched:
+            score += 4
+            matched.append(phrase)
+            if phrase in _string_list(model.get("intent_aliases")) or phrase in _string_list(model.get("analysis_patterns")):
+                matched_intent_signal = True
+
     understanding_result = understanding_result or {}
     candidate_models = {str(name) for name in understanding_result.get("candidate_models", [])}
     if model.get("name") in candidate_models:
@@ -139,8 +203,27 @@ def _score_model(
 
     query_mode = str(understanding_result.get("query_mode") or classify_query_mode(user_query)["query_mode"])
     if query_mode in {"analysis", "reconciliation", "diagnosis"}:
+        if model.get("semantic_kind") == "composite_analysis":
+            score += 5
+        if model.get("semantic_kind") == "atomic_fact":
+            score += 2
         if any(word in model.get("analysis_patterns", []) for word in ("compare", "reconciliation", "diagnosis")):
             score += 4
+        if model.get("recommended_tool") == "mql_query":
+            score += 2
+        if entry_enabled and model.get("semantic_kind") == "composite_analysis":
+            score += 2
+        elif not entry_enabled:
+            score -= 1 if matched_intent_signal else 6
+    elif query_mode == "fact_query":
+        if model.get("semantic_kind") == "atomic_fact":
+            score += 4
+        if not entry_enabled and model.get("semantic_kind") == "composite_analysis" and not matched_intent_signal:
+            score -= 3
+    if matched_intent_signal and model.get("semantic_kind") == "composite_analysis":
+        score += 4
+    if model.get("semantic_kind") == "entity_dimension" and model.get("supports_entity_resolution"):
+        score += 2
 
     return score, matched
 
@@ -166,6 +249,12 @@ def _merge_query_keywords(
     understanding_result = understanding_result or {}
     for key in ("metrics", "dimensions", "candidate_models"):
         for value in understanding_result.get(key, []) or []:
+            text = str(value or "").strip()
+            if text and text not in keywords:
+                keywords.append(text)
+    semantic_scope = understanding_result.get("semantic_scope") or {}
+    for key in ("entity_models", "atomic_models", "composite_models"):
+        for value in semantic_scope.get(key, []) or []:
             text = str(value or "").strip()
             if text and text not in keywords:
                 keywords.append(text)
@@ -195,18 +284,20 @@ async def build_semantic_grounding(
                 SysSemanticModel.label,
                 SysSemanticModel.description,
                 SysSemanticModel.source_table,
+                SysSemanticModel.model_type,
                 SysSemanticModel.yaml_definition,
                 SysSemanticModel.status,
             ).where(SysSemanticModel.status == "active")
         )
 
         models: list[dict[str, Any]] = []
-        for name, label, description, source_table, yaml_definition, status in model_result.all():
+        for name, label, description, source_table, model_type, yaml_definition, status in model_result.all():
             item = _extract_model_metadata(
                 name=name,
                 label=label,
                 description=description or "",
                 source_table=source_table,
+                model_type=model_type,
                 yaml_definition=yaml_definition,
                 status=status,
             )
@@ -230,7 +321,7 @@ async def build_semantic_grounding(
                 if item not in enterprise_candidates:
                     enterprise_candidates.append(item)
 
-    models.sort(key=lambda item: (-item["score"], item["name"]))
+    models.sort(key=lambda item: (-item["score"], not _is_entry_enabled(item), item["name"]))
     candidate_models = [item for item in models if item["score"] > 0][:6]
     if not candidate_models:
         candidate_models = models[:3]
@@ -255,6 +346,12 @@ async def build_semantic_grounding(
         conn = await db.connection()
         relevant_table_schemas = await _load_table_schema_map(conn, relevant_tables)
 
+    catalog_by_kind = {
+        "entity_dimension": [item for item in candidate_models if item.get("semantic_kind") == "entity_dimension"],
+        "atomic_fact": [item for item in candidate_models if item.get("semantic_kind") == "atomic_fact"],
+        "composite_analysis": [item for item in candidate_models if item.get("semantic_kind") == "composite_analysis"],
+    }
+
     return {
         "heuristic_query_mode": heuristic_mode["query_mode"],
         "heuristic_confidence": heuristic_mode["confidence"],
@@ -263,6 +360,7 @@ async def build_semantic_grounding(
         "company_fragments": company_fragments,
         "enterprise_candidates": enterprise_candidates[:5],
         "candidate_models": candidate_models,
+        "catalog_by_kind": catalog_by_kind,
         "relevant_tables": relevant_tables,
         "relevant_table_schemas": relevant_table_schemas,
     }

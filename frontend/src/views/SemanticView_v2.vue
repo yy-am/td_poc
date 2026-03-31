@@ -2,7 +2,7 @@
   <div class="semantic-container">
     <div class="page-header">
       <h2>语义建模管理</h2>
-      <p>管理物理表、语义模型、指标和维度映射关系，并直接测试语义查询。</p>
+      <p>按实体维度、原子事实、复合分析三层查看语义资产，并直接测试 semantic-first 查询。</p>
     </div>
 
     <el-card class="query-card" shadow="never">
@@ -14,31 +14,47 @@
       </template>
 
       <div class="query-grid">
-        <el-select v-model="queryModelName" placeholder="选择模型" filterable>
+        <el-select v-model="queryModelName" placeholder="选择语义模型" filterable>
           <el-option
-            v-for="m in queryableModels"
-            :key="m.name"
-            :label="`${m.label} (${m.name})`"
-            :value="m.name"
+            v-for="model in queryableModels"
+            :key="model.name"
+            :label="`${model.label} (${model.name})`"
+            :value="model.name"
           />
         </el-select>
-        <el-input v-model="queryDimensionsText" placeholder="维度, 逗号分隔，例如 tax_period,taxpayer_id" />
-        <el-input v-model="queryMetricsText" placeholder="指标, 逗号分隔，例如 tax_payable,total_sales_amount" />
-        <el-input v-model="queryLimitText" placeholder="limit" />
+        <el-input v-model="queryDimensionsText" placeholder="维度，逗号分隔" />
+        <el-input v-model="queryMetricsText" placeholder="指标，逗号分隔" />
+        <el-input v-model="queryGrainText" placeholder="粒度，例如 month / quarter / year" />
       </div>
 
-      <div class="query-grid query-grid-wide">
+      <div class="query-grid">
+        <el-input v-model="queryLimitText" placeholder="limit" />
+        <el-input
+          v-model="queryEntityFiltersText"
+          type="textarea"
+          :rows="2"
+          placeholder='entity_filters JSON，例如 {"enterprise_name":["链龙商贸"]}'
+        />
+        <el-input
+          v-model="queryResolvedFiltersText"
+          type="textarea"
+          :rows="2"
+          placeholder='resolved_filters JSON，例如 {"taxpayer_id":["91320100..."]}'
+        />
         <el-input
           v-model="queryFiltersText"
           type="textarea"
           :rows="2"
           placeholder='filters JSON，例如 [{"field":"tax_period","op":"between","value":["2024-01","2024-12"]}]'
         />
+      </div>
+
+      <div class="query-grid query-grid-wide">
         <el-input
           v-model="queryOrderText"
           type="textarea"
           :rows="2"
-          placeholder='order JSON，例如 [{"field":"tax_payable","direction":"desc"}]'
+          placeholder='order JSON，例如 [{"field":"warning_count","direction":"desc"}]'
         />
       </div>
 
@@ -51,7 +67,17 @@
         <div class="query-summary">
           <span>结果行数: {{ queryResult.row_count }}</span>
           <span>模型: {{ queryResult.model_label }}</span>
-          <span v-if="queryResult.warnings.length">提示: {{ queryResult.warnings.join('；') }}</span>
+          <span v-if="queryResult.semantic_kind">类型: {{ kindLabel(queryResult.semantic_kind) }}</span>
+          <span v-if="queryResult.semantic_grain">粒度: {{ queryResult.semantic_grain }}</span>
+        </div>
+        <div v-if="queryResult.resolved_filters && Object.keys(queryResult.resolved_filters).length" class="query-filters">
+          已解析过滤: {{ JSON.stringify(queryResult.resolved_filters) }}
+        </div>
+        <div v-if="queryResult.resolution_log?.length" class="query-filters">
+          解析日志: {{ queryResult.resolution_log.join('；') }}
+        </div>
+        <div v-if="queryResult.warnings.length" class="query-filters">
+          提示: {{ queryResult.warnings.join('；') }}
         </div>
         <pre class="sql-preview">{{ queryResult.sql }}</pre>
         <el-table :data="queryResult.rows" size="small" stripe max-height="360" class="dark-table">
@@ -67,67 +93,108 @@
     </el-card>
 
     <el-tabs v-model="activeTab" class="dark-tabs">
-      <el-tab-pane label="物理模型" name="physical">
+      <el-tab-pane label="实体维度" name="entity_dimension">
         <div class="model-grid">
-          <div v-for="m in physicalModels" :key="m.id" class="model-card" @click="showDetail(m)">
+          <div v-for="model in entityModels" :key="model.id" class="model-card" @click="showDetail(model)">
             <div class="model-card-header">
-              <el-icon color="#409eff"><Coin /></el-icon>
-              <span class="model-name">{{ m.label }}</span>
+              <span class="model-name">{{ model.label }}</span>
+              <el-tag size="small" type="info">{{ kindLabel(model.semantic_kind) }}</el-tag>
             </div>
             <div class="model-meta">
-              <el-tag size="small" type="info">{{ m.source_table }}</el-tag>
-              <el-tag size="small" :type="m.status === 'active' ? 'success' : 'warning'">{{ m.status }}</el-tag>
+              <el-tag size="small" :type="model.entry_enabled ? 'success' : 'info'">
+                {{ model.entry_enabled ? '可作为入口' : '辅助模型' }}
+              </el-tag>
+              <el-tag size="small">{{ model.source_table }}</el-tag>
             </div>
-            <p class="model-desc">{{ m.description }}</p>
+            <p class="model-desc">{{ model.description }}</p>
           </div>
         </div>
       </el-tab-pane>
 
-      <el-tab-pane label="语义模型" name="semantic">
+      <el-tab-pane label="原子事实" name="atomic_fact">
         <div class="model-grid">
-          <div v-for="m in semanticModels" :key="m.id" class="model-card" @click="showDetail(m)">
+          <div v-for="model in atomicModels" :key="model.id" class="model-card" @click="showDetail(model)">
             <div class="model-card-header">
-              <el-icon color="#67c23a"><Connection /></el-icon>
-              <span class="model-name">{{ m.label }}</span>
+              <span class="model-name">{{ model.label }}</span>
+              <el-tag size="small" type="warning">{{ kindLabel(model.semantic_kind) }}</el-tag>
             </div>
             <div class="model-meta">
-              <el-tag size="small" type="success">语义层</el-tag>
-              <el-tag size="small" type="info">{{ m.source_table }}</el-tag>
+              <el-tag size="small" type="success" v-if="model.has_yaml_definition">可语义查询</el-tag>
+              <el-tag size="small">{{ model.source_table }}</el-tag>
             </div>
-            <p class="model-desc">{{ m.description }}</p>
+            <p class="model-desc">{{ model.description }}</p>
           </div>
         </div>
       </el-tab-pane>
 
-      <el-tab-pane label="指标模型" name="metric">
+      <el-tab-pane label="复合分析" name="composite_analysis">
         <div class="model-grid">
-          <div v-for="m in metricModels" :key="m.id" class="model-card" @click="showDetail(m)">
+          <div v-for="model in compositeModels" :key="model.id" class="model-card" @click="showDetail(model)">
             <div class="model-card-header">
-              <el-icon color="#e6a23c"><TrendCharts /></el-icon>
-              <span class="model-name">{{ m.label }}</span>
+              <span class="model-name">{{ model.label }}</span>
+              <el-tag size="small" type="success">{{ kindLabel(model.semantic_kind) }}</el-tag>
             </div>
             <div class="model-meta">
-              <el-tag size="small" type="warning">指标</el-tag>
+              <el-tag size="small" type="success" v-if="model.entry_enabled">主题入口</el-tag>
+              <el-tag size="small">{{ model.source_count || 0 }} sources / {{ model.join_count || 0 }} joins</el-tag>
             </div>
-            <p class="model-desc">{{ m.description }}</p>
+            <p class="model-desc">{{ model.description }}</p>
           </div>
         </div>
       </el-tab-pane>
     </el-tabs>
 
-    <el-drawer v-model="detailVisible" :title="selectedModel?.label" size="520px">
+    <el-drawer v-model="detailVisible" :title="selectedModel?.label" size="560px">
       <template v-if="selectedModel">
         <el-descriptions :column="1" border class="dark-desc">
           <el-descriptions-item label="标识">{{ selectedModel.name }}</el-descriptions-item>
+          <el-descriptions-item label="类型">{{ kindLabel(selectedModel.semantic_kind) }}</el-descriptions-item>
+          <el-descriptions-item label="领域">{{ selectedModel.semantic_domain || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="粒度">{{ selectedModel.semantic_grain || '-' }}</el-descriptions-item>
           <el-descriptions-item label="源表">{{ selectedModel.source_table }}</el-descriptions-item>
-          <el-descriptions-item label="类型">{{ selectedModel.model_type }}</el-descriptions-item>
           <el-descriptions-item label="状态">{{ selectedModel.status }}</el-descriptions-item>
+          <el-descriptions-item label="回退策略">{{ selectedModel.fallback_policy || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="入口能力">{{ selectedModel.entry_enabled ? '是' : '否' }}</el-descriptions-item>
+          <el-descriptions-item label="实体解析">{{ selectedModel.supports_entity_resolution ? '支持' : '不支持' }}</el-descriptions-item>
         </el-descriptions>
+
+        <div class="detail-block">
+          <div class="detail-title">业务术语</div>
+          <div class="tag-list">
+            <el-tag v-for="item in selectedModel.business_terms || []" :key="item" size="small">{{ item }}</el-tag>
+          </div>
+        </div>
+
+        <div class="detail-block">
+          <div class="detail-title">分析模式</div>
+          <div class="tag-list">
+            <el-tag v-for="item in selectedModel.analysis_patterns || []" :key="item" size="small" type="success">
+              {{ item }}
+            </el-tag>
+          </div>
+        </div>
+
+        <div class="detail-block">
+          <div class="detail-title">证据要求</div>
+          <div class="tag-list">
+            <el-tag v-for="item in selectedModel.evidence_requirements || []" :key="item" size="small" type="warning">
+              {{ item }}
+            </el-tag>
+          </div>
+        </div>
+
+        <div class="detail-block">
+          <div class="detail-title">维度 / 指标</div>
+          <div class="tag-list">
+            <el-tag v-for="item in selectedModel.dimensions || []" :key="`d-${item}`" size="small" type="info">{{ item }}</el-tag>
+            <el-tag v-for="item in selectedModel.metrics || []" :key="`m-${item}`" size="small" type="danger">{{ item }}</el-tag>
+          </div>
+        </div>
 
         <h4 class="schema-title">表结构</h4>
         <el-table :data="tableColumns" size="small" stripe max-height="360" class="dark-table">
-          <el-table-column prop="column_name" label="字段名" width="160" />
-          <el-table-column prop="data_type" label="类型" width="120" />
+          <el-table-column prop="column_name" label="字段名" width="180" />
+          <el-table-column prop="data_type" label="类型" width="140" />
           <el-table-column prop="comment" label="注释" />
         </el-table>
       </template>
@@ -143,32 +210,66 @@ import type { SemanticModel, SemanticQueryResult } from '../types/agent'
 
 const API = getApiBase()
 const models = ref<SemanticModel[]>([])
-const activeTab = ref('physical')
+const activeTab = ref<'entity_dimension' | 'atomic_fact' | 'composite_analysis'>('entity_dimension')
 const detailVisible = ref(false)
 const selectedModel = ref<SemanticModel | null>(null)
 const tableColumns = ref<any[]>([])
 const queryLoading = ref(false)
 const queryError = ref('')
 const queryResult = ref<SemanticQueryResult | null>(null)
-const queryModelName = ref('vat_declaration')
-const queryDimensionsText = ref('tax_period')
-const queryMetricsText = ref('tax_payable')
+const queryModelName = ref('')
+const queryDimensionsText = ref('')
+const queryMetricsText = ref('')
+const queryGrainText = ref('')
 const queryLimitText = ref('20')
 const queryFiltersText = ref('')
-const queryOrderText = ref('[{"field":"tax_payable","direction":"desc"}]')
+const queryEntityFiltersText = ref('')
+const queryResolvedFiltersText = ref('')
+const queryOrderText = ref('')
 
-const queryableModels = computed(() => models.value.filter(m => Boolean(m)))
-const physicalModels = computed(() => models.value.filter(m => m.model_type === 'physical'))
-const semanticModels = computed(() => models.value.filter(m => m.model_type === 'semantic'))
-const metricModels = computed(() => models.value.filter(m => m.model_type === 'metric'))
+const queryableModels = computed(() => models.value.filter(model => model.has_yaml_definition))
+const entityModels = computed(() => modelsByKind.value.entity_dimension)
+const atomicModels = computed(() => modelsByKind.value.atomic_fact)
+const compositeModels = computed(() => modelsByKind.value.composite_analysis)
+
+const modelsByKind = computed(() => {
+  const grouped = {
+    entity_dimension: [] as SemanticModel[],
+    atomic_fact: [] as SemanticModel[],
+    composite_analysis: [] as SemanticModel[],
+  }
+  for (const model of models.value) {
+    const kind = model.semantic_kind
+    if (kind === 'entity_dimension' || kind === 'atomic_fact' || kind === 'composite_analysis') {
+      grouped[kind].push(model)
+    }
+  }
+  return grouped
+})
 
 onMounted(async () => {
-  const { data } = await axios.get(`${API}/semantic/models`)
-  models.value = data
-  if (!models.value.find(item => item.name === queryModelName.value) && models.value.length > 0) {
-    queryModelName.value = models.value[0].name
+  await loadCatalog()
+  if (!queryModelName.value && queryableModels.value.length > 0) {
+    queryModelName.value = queryableModels.value[0].name
   }
 })
+
+async function loadCatalog() {
+  const { data } = await axios.get(`${API}/semantic/catalog`)
+  if (Array.isArray(data)) {
+    models.value = data
+    return
+  }
+  if (Array.isArray(data?.models)) {
+    models.value = data.models
+    return
+  }
+  if (data?.models && typeof data.models === 'object') {
+    models.value = Object.values(data.models).flat() as SemanticModel[]
+    return
+  }
+  models.value = []
+}
 
 async function showDetail(model: SemanticModel) {
   selectedModel.value = model
@@ -190,8 +291,11 @@ async function runSemanticQuery() {
       model_name: queryModelName.value,
       dimensions: parseCsv(queryDimensionsText.value),
       metrics: parseCsv(queryMetricsText.value),
-      filters: parseJsonList(queryFiltersText.value),
-      order: parseJsonList(queryOrderText.value),
+      grain: queryGrainText.value.trim() || undefined,
+      filters: parseJsonArray(queryFiltersText.value),
+      entity_filters: parseJsonObject(queryEntityFiltersText.value),
+      resolved_filters: parseJsonObject(queryResolvedFiltersText.value),
+      order: parseJsonArray(queryOrderText.value),
       limit: Number.parseInt(queryLimitText.value, 10) || 20,
     }
     const { data } = await axios.post(`${API}/semantic/query`, payload)
@@ -210,7 +314,7 @@ function parseCsv(value: string): string[] {
     .filter(Boolean)
 }
 
-function parseJsonList(value: string): any[] {
+function parseJsonArray(value: string): any[] {
   if (!value.trim()) return []
   try {
     const parsed = JSON.parse(value)
@@ -218,6 +322,24 @@ function parseJsonList(value: string): any[] {
   } catch {
     return []
   }
+}
+
+function parseJsonObject(value: string): Record<string, any> {
+  if (!value.trim()) return {}
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function kindLabel(kind?: string | null) {
+  return {
+    entity_dimension: '实体维度',
+    atomic_fact: '原子事实',
+    composite_analysis: '复合分析',
+  }[kind || ''] || kind || '-'
 }
 </script>
 
@@ -257,17 +379,18 @@ function parseJsonList(value: string): any[] {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  margin-bottom: 12px;
 }
 
 .query-grid-wide {
-  margin-top: 12px;
+  margin-top: 0;
 }
 
 .query-actions {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 12px;
+  margin-top: 4px;
 }
 
 .query-error {
@@ -279,7 +402,8 @@ function parseJsonList(value: string): any[] {
   margin-top: 16px;
 }
 
-.query-summary {
+.query-summary,
+.query-filters {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -322,6 +446,7 @@ function parseJsonList(value: string): any[] {
 
 .model-card-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
@@ -335,6 +460,7 @@ function parseJsonList(value: string): any[] {
 
 .model-meta {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 10px;
 }
@@ -345,9 +471,22 @@ function parseJsonList(value: string): any[] {
   line-height: 1.5;
 }
 
+.detail-block {
+  margin-top: 18px;
+}
+
+.detail-title,
 .schema-title {
   margin: 20px 0 10px;
   color: #e0e0e0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 :deep(.el-tabs__item) {

@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Execution Deck V6</title>
+  <style>
+    :root{
+      --bg:#edf3fb;
+      --ink:#0d1622;
+      --muted:#607285;
+      --line:rgba(76,103,136,.12);
+      --panel:rgba(255,255,255,.72);
+      --panel-strong:rgba(255,255,255,.84);
+      --blue:#4f87ff;
+      --cyan:#77d4ff;
+      --mint:#6ed6c1;
+      --amber:#ffb65d;
+      --shadow:0 28px 64px rgba(34,58,89,.10);
+      --radius:28px;
+      --ui:"Segoe UI Variable Display","Aptos","Segoe UI","Microsoft YaHei UI",sans-serif;
+      --mono:Consolas,"JetBrains Mono",monospace;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0}
+    body{
+      min-height:100vh;
+      color:var(--ink);
+      font-family:var(--ui);
+      background:
+        radial-gradient(circle at 12% 16%, rgba(119,212,255,.24), transparent 24%),
+        radial-gradient(circle at 84% 10%, rgba(255,182,93,.14), transparent 22%),
+        radial-gradient(circle at 72% 78%, rgba(110,214,193,.16), transparent 18%),
+        linear-gradient(180deg, #f8fbff 0%, #eef3fb 38%, #edf3fb 100%);
+    }
+    body:before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(rgba(92,116,145,.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(92,116,145,.045) 1px, transparent 1px);
+      background-size:36px 36px;
+      mask-image:linear-gradient(180deg, rgba(0,0,0,.44), transparent 74%);
+    }
+    .shell{
+      position:relative;
+      z-index:1;
+      width:min(1560px, calc(100% - 44px));
+      margin:22px auto 34px;
+    }
+    .frame{
+      position:relative;
+      overflow:hidden;
+      min-height:940px;
+      padding:18px;
+      border-radius:36px;
+      border:1px solid rgba(102,125,154,.16);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.70), rgba(255,255,255,.58)),
+        radial-gradient(circle at top left, rgba(119,212,255,.12), transparent 34%);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(20px);
+    }
+    .mesh{
+      position:absolute;
+      inset:-100px;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at 24% 24%, rgba(79,135,255,.11), transparent 14%),
+        radial-gradient(circle at 62% 34%, rgba(119,212,255,.16), transparent 14%),
+        radial-gradient(circle at 73% 68%, rgba(255,182,93,.14), transparent 13%),
+        radial-gradient(circle at 80% 86%, rgba(110,214,193,.13), transparent 15%);
+      filter:blur(14px);
+      opacity:.96;
+    }
+    .statusbar{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:14px;
+      margin-bottom:14px;
+    }
+    .glass{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:24px;
+      box-shadow:0 16px 38px rgba(33,58,90,.08);
+      backdrop-filter:blur(18px);
+    }
+    .runline{
+      padding:16px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+    }
+    .runleft{min-width:0}
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(79,135,255,.08);
+      color:#3f77eb;
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .badge:before{
+      content:"";
+      width:7px;height:7px;border-radius:50%;
+      background:linear-gradient(180deg, #4f87ff, #77d4ff);
+      box-shadow:0 0 0 6px rgba(79,135,255,.10);
+    }
+    .query{
+      margin-top:10px;
+      font-size:22px;
+      font-weight:760;
+      line-height:1.18;
+      letter-spacing:-.03em;
+      max-width:28ch;
+    }
+    .runchips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.74);
+      border:1px solid rgba(76,103,136,.10);
+      font-size:12px;
+      color:#53667f;
+      white-space:nowrap;
+    }
+    .metrics{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+      gap:10px;
+      padding:12px;
+    }
+    .metric{
+      padding:12px 14px;
+      border-radius:20px;
+      background:rgba(255,255,255,.76);
+      border:1px solid rgba(76,103,136,.09);
+    }
+    .metric b{
+      display:block;
+      font-size:24px;
+      letter-spacing:-.04em;
+      line-height:1;
+      margin-bottom:6px;
+    }
+    .metric span{
+      display:block;
+      font-size:11px;
+      line-height:1.5;
+      color:var(--muted);
+    }
+    .workspace{
+      display:grid;
+      grid-template-columns:190px minmax(0,1fr) 324px;
+      gap:14px;
+      min-height:826px;
+    }
+    .rail{
+      padding:16px 14px;
+    }
+    .rail h3,.inspector h3{
+      margin:0 0 14px;
+      font-size:11px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:#73849b;
+    }
+    .stage{
+      position:relative;
+      padding:14px 14px 14px 16px;
+      margin-bottom:10px;
+      border-radius:20px;
+      background:rgba(255,255,255,.58);
+      border:1px solid rgba(76,103,136,.10);
+    }
+    .stage.active{
+      background:linear-gradient(180deg, rgba(255,244,229,.94), rgba(255,255,255,.70));
+      border-color:rgba(236,170,77,.26);
+      box-shadow:0 14px 28px rgba(255,182,93,.12);
+    }
+    .stage.done{
+      background:linear-gradient(180deg, rgba(239,252,247,.92), rgba(255,255,255,.70));
+    }
+    .stage .num{
+      display:inline-flex;
+      width:28px;height:28px;border-radius:14px;
+      align-items:center;justify-content:center;
+      background:#eef4ff;
+      font-size:11px;
+      font-weight:700;
+      color:#53667f;
+      margin-bottom:10px;
+    }
+    .stage.active .num{
+      background:#fff0dc;
+      color:#c3811f;
+    }
+    .stage .title{
+      font-size:17px;
+      font-weight:700;
+      letter-spacing:-.02em;
+    }
+    .stage .desc{
+      margin-top:6px;
+      font-size:12px;
+      line-height:1.58;
+      color:var(--muted);
+    }
+    .stage .dot{
+      position:absolute;
+      right:14px;
+      top:14px;
+      width:10px;height:10px;border-radius:50%;
+      background:#bcc8d7;
+    }
+    .stage.done .dot{background:#76d8bf}
+    .stage.active .dot{background:#ffb65d;box-shadow:0 0 0 8px rgba(255,182,93,.14)}
+    .canvas{
+      padding:16px;
+    }
+    .canvasbox{
+      position:relative;
+      min-height:794px;
+      height:100%;
+      overflow:hidden;
+      border-radius:30px;
+      background:
+        linear-gradient(180deg, rgba(252,254,255,.92), rgba(243,248,255,.76)),
+        radial-gradient(circle at 50% 46%, rgba(79,135,255,.06), transparent 18%);
+      border:1px solid rgba(76,103,136,.10);
+    }
+    .col{
+      position:absolute;
+      top:0;bottom:0;
+      border-right:1px solid rgba(84,108,140,.08);
+      background:linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,0));
+    }
+    .col span{
+      position:absolute;
+      top:14px;left:16px;
+      font-size:10px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#7d8ea4;
+    }
+    svg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+    }
+    .flow path{
+      fill:none;
+      stroke:rgba(76,110,154,.22);
+      stroke-width:3;
+      stroke-linecap:round;
+    }
+    .flow path.hot{
+      stroke:url(#hotLine);
+      stroke-width:4;
+      opacity:.92;
+    }
+    .halo{
+      position:absolute;
+      border-radius:999px;
+      filter:blur(28px);
+      opacity:.62;
+    }
+    .halo.blue{background:rgba(119,212,255,.38)}
+    .halo.amber{background:rgba(255,182,93,.28)}
+    .node{
+      position:absolute;
+      width:238px;
+      min-height:132px;
+      padding:16px;
+      border-radius:28px;
+      background:linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.68));
+      border:1px solid rgba(76,103,136,.11);
+      box-shadow:0 18px 36px rgba(34,58,89,.09);
+    }
+    .node.big{
+      width:264px;
+      min-height:154px;
+      padding:18px;
+    }
+    .node.active{
+      background:linear-gradient(180deg, rgba(255,248,237,.96), rgba(255,255,255,.74));
+      border-color:rgba(236,170,77,.28);
+      box-shadow:0 24px 44px rgba(255,182,93,.16);
+    }
+    .node .head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:12px;
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:#7b8da2;
+    }
+    .state{
+      padding:5px 8px;
+      border-radius:999px;
+      background:#edf4ff;
+      color:#576a82;
+      font-size:10px;
+      font-weight:700;
+    }
+    .state.done{background:#ecfbf5;color:#1f8a67}
+    .state.active{background:#fff0dc;color:#c3811f}
+    .node .title{
+      font-size:18px;
+      font-weight:760;
+      line-height:1.14;
+      letter-spacing:-.03em;
+    }
+    .node.big .title{font-size:23px}
+    .node .desc{
+      margin-top:8px;
+      font-size:13px;
+      line-height:1.6;
+      color:var(--muted);
+    }
+    .tags{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin-top:12px;
+    }
+    .tag{
+      padding:6px 9px;
+      border-radius:999px;
+      background:rgba(240,245,255,.90);
+      border:1px solid rgba(76,103,136,.08);
+      font-size:10px;
+      color:#546780;
+    }
+    .center{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      width:344px;height:344px;border-radius:50%;
+      display:grid;place-items:center;
+      background:
+        radial-gradient(circle, rgba(255,255,255,.96) 0%, rgba(244,249,255,.90) 44%, rgba(222,236,255,.44) 66%, transparent 67%);
+    }
+    .center:before{
+      content:"";
+      position:absolute;
+      inset:24px;
+      border-radius:50%;
+      border:1px solid rgba(76,103,136,.10);
+      background:radial-gradient(circle, rgba(79,135,255,.06), rgba(255,255,255,0));
+    }
+    .center:after{
+      content:"";
+      position:absolute;
+      inset:76px;
+      border-radius:50%;
+      border:1px solid rgba(76,103,136,.08);
+    }
+    .focus{
+      position:relative;
+      z-index:1;
+      text-align:center;
+      width:228px;
+    }
+    .focus .mini{
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      color:#7c8ea4;
+    }
+    .focus .main{
+      margin-top:8px;
+      font-size:36px;
+      line-height:1.02;
+      letter-spacing:-.05em;
+      font-weight:820;
+    }
+    .focus .sub{
+      margin-top:10px;
+      font-size:15px;
+      color:#c3811f;
+      line-height:1.5;
+    }
+    .focus .caption{
+      margin-top:12px;
+      font-size:12px;
+      line-height:1.62;
+      color:#697b92;
+    }
+    .inspector{
+      padding:16px;
+    }
+    .ibox{
+      padding:16px;
+      border-radius:22px;
+      background:var(--panel-strong);
+      border:1px solid rgba(76,103,136,.10);
+      box-shadow:0 14px 28px rgba(34,58,89,.06);
+      margin-bottom:10px;
+    }
+    .ibox .label{
+      display:block;
+      margin-bottom:10px;
+      font-size:10px;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      color:#7a8ca3;
+    }
+    .ibox .hero{
+      font-size:31px;
+      line-height:1.02;
+      letter-spacing:-.05em;
+      font-weight:820;
+      max-width:7ch;
+    }
+    .ibox .hint{
+      margin-top:8px;
+      font-size:14px;
+      color:#c3811f;
+    }
+    .fold{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:13px 14px;
+      border-radius:18px;
+      background:rgba(236,243,255,.82);
+      border:1px solid rgba(76,103,136,.08);
+    }
+    .fold b{font-size:15px}
+    .fold span{font-size:12px;color:var(--muted)}
+    .rows{
+      display:grid;
+      gap:10px;
+    }
+    .row{
+      display:grid;
+      grid-template-columns:86px 1fr;
+      gap:10px;
+      font-size:13px;
+      line-height:1.7;
+    }
+    .row b{color:#4b5f78}
+    .toolname{
+      font-size:26px;
+      line-height:1.02;
+      letter-spacing:-.04em;
+      font-weight:820;
+    }
+    .soft{
+      margin-top:6px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.6;
+    }
+    .sql{
+      margin-top:10px;
+      padding:14px 16px;
+      border-radius:18px;
+      background:#0d1b2d;
+      color:#9af0d6;
+      font:13px/1.7 var(--mono);
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .mini-chart{
+      display:grid;
+      gap:10px;
+    }
+    .bar{
+      display:grid;
+      grid-template-columns:102px 1fr 76px;
+      gap:10px;
+      align-items:center;
+      font-size:13px;
+      color:#52657d;
+    }
+    .track{
+      height:10px;
+      border-radius:999px;
+      background:#edf3fb;
+      overflow:hidden;
+    }
+    .fill{
+      height:100%;
+      border-radius:inherit;
+      background:linear-gradient(90deg, #77d4ff, #4f87ff);
+    }
+    .fill.alt{background:linear-gradient(90deg, #ffd39f, #ffb65d)}
+    .fill.soft{background:linear-gradient(90deg, #9de6d8, #6ed6c1)}
+    .footerbar{
+      position:absolute;
+      left:18px;right:18px;bottom:18px;
+      display:flex;flex-wrap:wrap;gap:8px;
+    }
+    .footerbar span{
+      padding:9px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.62);
+      border:1px solid rgba(76,103,136,.08);
+      font-size:12px;
+      color:#607285;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="frame">
+      <div class="mesh"></div>
+
+      <div class="statusbar">
+        <div class="glass runline">
+          <div class="runleft">
+            <span class="badge">Execution Deck · refined</span>
+            <div class="query">分析华兴科技 2024 Q3 税账差异，并解释差异构成。</div>
+          </div>
+          <div class="runchips">
+            <span class="chip">Tax Reconciliation</span>
+            <span class="chip">Huaxing Tech</span>
+            <span class="chip">2024 Q3</span>
+            <span class="chip">Planner → Executor → Reviewer</span>
+          </div>
+        </div>
+        <div class="glass metrics">
+          <div class="metric"><b>08</b><span>节点数<br/>更少，更大，更有舞台感</span></div>
+          <div class="metric"><b>04</b><span>语义模型<br/>主模型 + 支撑模型</span></div>
+          <div class="metric"><b>03</b><span>工具调用<br/>语义优先，SQL 后置</span></div>
+          <div class="metric"><b>92s</b><span>总耗时<br/>保留 run 感知</span></div>
+        </div>
+      </div>
+
+      <div class="workspace">
+        <aside class="glass rail">
+          <h3>Stages</h3>
+          <div class="stage done">
+            <div class="dot"></div>
+            <div class="num">01</div>
+            <div class="title">问题理解</div>
+            <div class="desc">识别企业、期间、查询模式，确认这是差异诊断而不是 metadata 查询。</div>
+          </div>
+          <div class="stage done">
+            <div class="dot"></div>
+            <div class="num">02</div>
+            <div class="title">语义绑定</div>
+            <div class="desc">选定主模型与辅助模型，建立 grain、filters 与 evidence 要求。</div>
+          </div>
+          <div class="stage active">
+            <div class="dot"></div>
+            <div class="num">03</div>
+            <div class="title">证据执行</div>
+            <div class="desc">先拉差异事实，再拆解差异构成，必要时才下探显式 SQL。</div>
+          </div>
+          <div class="stage">
+            <div class="dot"></div>
+            <div class="num">04</div>
+            <div class="title">审查门禁</div>
+            <div class="desc">检查证据覆盖、实体过滤和口径一致性，决定是否 approve。</div>
+          </div>
+          <div class="stage">
+            <div class="dot"></div>
+            <div class="num">05</div>
+            <div class="title">结论交付</div>
+            <div class="desc">最终报告支持从结论回到执行节点继续审阅。</div>
+          </div>
+        </aside>
+
+        <main class="glass canvas">
+          <div class="canvasbox">
+            <div class="col" style="left:0;width:20%"><span>Understanding</span></div>
+            <div class="col" style="left:20%;width:20%"><span>Semantic Binding</span></div>
+            <div class="col" style="left:40%;width:32%"><span>Evidence Execution</span></div>
+            <div class="col" style="left:72%;width:13%"><span>Review</span></div>
+            <div class="col" style="left:85%;width:15%"><span>Delivery</span></div>
+
+            <div class="halo blue" style="left:164px;top:186px;width:170px;height:170px"></div>
+            <div class="halo blue" style="left:486px;top:114px;width:170px;height:170px"></div>
+            <div class="halo amber" style="left:764px;top:400px;width:206px;height:206px"></div>
+
+            <svg class="flow" viewBox="0 0 980 800" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="hotLine" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#77d4ff"/>
+                  <stop offset="100%" stop-color="#ffb65d"/>
+                </linearGradient>
+              </defs>
+              <path d="M 232 218 C 328 218, 354 218, 442 194" />
+              <path d="M 232 546 C 340 546, 380 450, 462 386" />
+              <path class="hot" d="M 534 194 C 646 194, 700 194, 794 238" />
+              <path class="hot" d="M 564 386 C 674 386, 736 438, 818 484" />
+              <path d="M 824 244 C 882 244, 906 314, 890 390" />
+              <path d="M 848 486 C 914 486, 918 592, 890 652" />
+              <path d="M 892 390 C 936 390, 944 458, 948 640" />
+            </svg>
+
+            <section class="node" style="left:56px;top:138px">
+              <div class="head"><span>01 · Understanding</span><span class="state done">done</span></div>
+              <div class="title">识别问题目标</div>
+              <div class="desc">确认这是税账差异诊断，锁定企业、期间与证据要求。</div>
+              <div class="tags"><span class="tag">analysis</span><span class="tag">enterprise</span><span class="tag">period</span></div>
+            </section>
+
+            <section class="node" style="left:72px;top:466px">
+              <div class="head"><span>01B · Resolver</span><span class="state done">done</span></div>
+              <div class="title">实体期间解析</div>
+              <div class="desc">企业名映射为 taxpayer_id，并把季度展开为 7-9 月。</div>
+              <div class="tags"><span class="tag">dim_enterprise</span><span class="tag">month grain</span></div>
+            </section>
+
+            <section class="node" style="left:378px;top:110px">
+              <div class="head"><span>02 · Planner</span><span class="state done">done</span></div>
+              <div class="title">绑定语义模型</div>
+              <div class="desc">主模型回答差异事实，辅助模型补差异构成与事实校验。</div>
+              <div class="tags"><span class="tag">mart_revenue_reconciliation</span><span class="tag">mart_adjustment_tracking</span></div>
+            </section>
+
+            <div class="center">
+              <div class="focus">
+                <div class="mini">current focus</div>
+                <div class="main">差异构成分析</div>
+                <div class="sub">Executor · Active</div>
+                <div class="caption">把“差了多少”拆成“为什么差”，这是整个 run 的叙事中心。</div>
+              </div>
+            </div>
+
+            <section class="node big" style="left:674px;top:146px">
+              <div class="head"><span>03 · Executor</span><span class="state done">done</span></div>
+              <div class="title">提取 Q3 差异事实</div>
+              <div class="desc">先用 semantic_query 拉平逐月差异，形成事实锚点，再决定是否继续钻取。</div>
+              <div class="tags"><span class="tag">semantic_query</span><span class="tag">3 rows</span><span class="tag">Q3 diff</span></div>
+            </section>
+
+            <section class="node big active" style="left:640px;top:394px">
+              <div class="head"><span>04 · Active Node</span><span class="state active">active</span></div>
+              <div class="title">拆解差异构成</div>
+              <div class="desc">时间性差异、口径差异、零散调整三类证据被重组成可读的分析面板。</div>
+              <div class="tags"><span class="tag">mart_adjustment_tracking</span><span class="tag">semantic first</span><span class="tag">review pending</span></div>
+            </section>
+
+            <section class="node" style="left:654px;top:640px">
+              <div class="head"><span>05 · SQL Audit</span><span class="state">pending</span></div>
+              <div class="title">明细 SQL 校验</div>
+              <div class="desc">只在需要时穿透，不让 SQL 抢走主视角。</div>
+              <div class="tags"><span class="tag">fallback</span><span class="tag">audit only</span></div>
+            </section>
+
+            <section class="node" style="left:824px;top:286px">
+              <div class="head"><span>06 · Reviewer</span><span class="state">pending</span></div>
+              <div class="title">Reviewer 审查</div>
+              <div class="desc">检查证据覆盖和实体过滤，决定是否 approve。</div>
+              <div class="tags"><span class="tag">coverage</span><span class="tag">verdict</span></div>
+            </section>
+
+            <section class="node" style="left:832px;top:582px">
+              <div class="head"><span>07 · Delivery</span><span class="state">pending</span></div>
+              <div class="title">最终报告回链</div>
+              <div class="desc">结论、图表和建议都能反查到执行节点。</div>
+              <div class="tags"><span class="tag">answer</span><span class="tag">drill back</span></div>
+            </section>
+          </div>
+        </main>
+
+        <aside class="glass inspector">
+          <h3>Node Inspector</h3>
+
+          <div class="ibox">
+            <span class="label">active node</span>
+            <div class="hero">拆解差异构成</div>
+            <div class="hint">Executor · Active · 16.8s</div>
+          </div>
+
+          <div class="ibox">
+            <div class="fold"><b>思路摘要</b><span>默认收起</span></div>
+          </div>
+
+          <div class="ibox">
+            <span class="label">semantic binding</span>
+            <div class="rows">
+              <div class="row"><b>entry</b><span>mart_adjustment_tracking</span></div>
+              <div class="row"><b>support</b><span>fact_vat_declaration</span></div>
+              <div class="row"><b>grain</b><span>month in quarter</span></div>
+              <div class="row"><b>filters</b><span>华兴科技 · 2024-07 ~ 09</span></div>
+            </div>
+          </div>
+
+          <div class="ibox">
+            <span class="label">tool</span>
+            <div class="toolname">semantic_query</div>
+            <div class="soft">group by source_category · sort by difference desc</div>
+          </div>
+
+          <div class="ibox">
+            <span class="label">sql</span>
+            <div class="soft">这条 SQL 是解释差异来源的穿透层，不是主入口。</div>
+            <div class="sql">SELECT source_category,
+       SUM(difference)
+FROM recon_adjustment_tracking
+WHERE taxpayer_id = ...
+GROUP BY source_category;</div>
+          </div>
+
+          <div class="ibox">
+            <span class="label">result / review</span>
+            <div class="mini-chart">
+              <div class="bar"><span>时间性差异</span><div class="track"><div class="fill" style="width:74%"></div></div><strong>401k</strong></div>
+              <div class="bar"><span>口径差异</span><div class="track"><div class="fill alt" style="width:34%"></div></div><strong>103k</strong></div>
+              <div class="bar"><span>其他调整</span><div class="track"><div class="fill soft" style="width:14%"></div></div><strong>36k</strong></div>
+            </div>
+            <div class="soft" style="margin-top:12px">Reviewer 建议：补一次 SQL audit，提高汇报可信度。</div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="footerbar">
+        <span>顶部压成状态栏</span>
+        <span>主画布放大</span>
+        <span>节点更少更大</span>
+        <span>Inspector 更成品</span>
+        <span>Gemini-ish clarity</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

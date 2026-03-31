@@ -11,6 +11,15 @@
 - **向量库**: ChromaDB (PersistentClient)
 - **MCP**: FastMCP (Python SDK, in-process调用)
 
+## 2026-03-30 v2 方案入口
+
+围绕 `TDA-MQL + StageGraph + 税务对账领域知识层` 的新方案已单独沉淀到：
+
+- `design/DESIGN_V2_MQL_STAGEGRAPH.md`
+- `design/PHASE1_TDA_MQL.md`
+
+当前 `DESIGN.md` 仍保留现状和已有实现说明；v2 文档作为下一阶段演进方案的主入口。
+
 ---
 
 ## 系统拓扑
@@ -128,232 +137,390 @@ acct_chart_of_accounts (account_code)
 
 ---
 
-## 语义层设计 (Headless BI)
+## 语义层设计 (Tax Warehouse Governance)
 
-### 三层架构
-1. **物理层 (Physical)**: 28张PostgreSQL物理表
-2. **语义层 (Semantic)**: YAML定义的语义模型, 包含join关系、指标、维度
-3. **消费层 (Consumption)**: Agent通过semantic_query工具查询, 语义编译器将指标/维度编译为SQL
+### 核心定位
+- 语义模型不是“给报表起个名字的 YAML”，而是 Agent、数据资产和业务口径之间的正式契约。
+- 语义层必须完整覆盖治理后的核心数据资产，不能只建少数分析成品模型。
+- 语义模型既可以映射单个数据资产，也可以映射多个数据资产的 join、汇总或桥接结果。
+- 企业名称到 `taxpayer_id` 的解析属于实体语义能力，应该内建在语义层，不应该默认暴露成用户可见的 SQL 计划节点。
+- Planner 和 Executor 应围绕语义模型规划与执行，物理表、原始 SQL 和临时 join 只作为兜底机制。
 
-### 语义模型示例
+### 分层关系
+1. **数据资产层 (Data Assets)**: PostgreSQL 物理表、治理后的事实表、维度表、分析宽表。
+2. **实体与维度层 (Entity/Dimension Semantics)**: 企业、税种、行业、主管税务机关、期间等统一业务主数据与解析规则。
+3. **原子事实语义层 (Atomic Fact Semantics)**: 对单个核心数据资产进行口径建模，明确主粒度、实体键、时间键、指标与维度。
+4. **复合分析语义层 (Composite Analysis Semantics)**: 在原子事实与维度语义之上形成 join、桥接、偏离、预警、对账等主题模型。
+5. **Agent 消费层 (Agent Consumption)**: Understanding、Planner、Executor、Reviewer 围绕语义模型目录、实体解析和证据要求协作。
+
+### 设计原则
+- **资产先行**: 每个治理后的核心物理资产，至少应先拥有一个原子语义模型。
+- **实体下沉**: 企业、税种、期间等解析与映射沉入语义层，不以显式 SQL 节点形式暴露给用户。
+- **复合后置**: 对账、风险画像、税负偏离等复合分析模型建立在原子语义模型之上，而不是替代原子语义模型。
+- **语义优先**: 业务问题默认先绑定语义模型，再决定是否需要下探到原始 SQL。
+- **证据闭环**: 每个复合分析模型都要声明依赖的原子事实、维度来源和结论证据要求。
+
+### 当前项目的数据资产到语义模型映射建议
+
+| 数据资产层 | 当前物理表/资产 | 建议语义模型类型 | 建议模型名 |
+|---|---|---|---|
+| 实体维度 | `enterprise_info` | 实体语义模型 | `dim_enterprise` |
+| 实体维度 | `dict_industry` | 维度语义模型 | `dim_industry` |
+| 实体维度 | `dict_tax_type` | 维度语义模型 | `dim_tax_type` |
+| 原子事实 | `tax_vat_declaration` | 原子事实语义模型 | `fact_vat_declaration` |
+| 原子事实 | `tax_vat_invoice_summary` | 原子事实语义模型 | `fact_vat_invoice_summary` |
+| 原子事实 | `tax_cit_quarterly` | 原子事实语义模型 | `fact_cit_quarterly` |
+| 原子事实 | `tax_cit_annual` | 原子事实语义模型 | `fact_cit_annual` |
+| 原子事实 | `tax_cit_adjustment_items` | 原子事实语义模型 | `fact_cit_adjustment_item` |
+| 原子事实 | `tax_other_taxes` | 原子事实语义模型 | `fact_other_tax_declaration` |
+| 原子事实 | `tax_risk_indicators` | 原子事实语义模型 | `fact_tax_risk_indicator` |
+| 复合分析 | `recon_revenue_comparison` | 复合分析语义模型 | `mart_revenue_reconciliation` |
+| 复合分析 | `recon_tax_burden_analysis` | 复合分析语义模型 | `mart_tax_burden_analysis` |
+| 复合分析 | `recon_adjustment_tracking` | 复合分析语义模型 | `mart_adjustment_tracking` |
+| 复合分析 | `recon_cross_check_result` | 复合分析语义模型 | `mart_cross_check_result` |
+
+### 当前实现存在的偏差
+- 当前仓库中的语义模型仍偏少，且主要集中在少量分析成品模型，不能代表完整语义层。
+- 当前 `semantic_query` 编译器基本仍是“单表 metrics/dimensions 编译器”，不足以表达跨资产 join 语义。
+- 当前对企业解析仍偏向在运行计划中显式生成 `enterprise_info -> taxpayer_id` 查询步骤，这不符合“实体解析下沉到语义层”的目标。
+- 当前计划虽然已经可以携带 `semantic_binding`，但尚未保证每个业务问题都先经过“语义绑定”再执行。
+
+### 语义模型分类定义
+
+#### 1. 实体与维度语义模型
+- 负责统一实体主键、显示名、别名、主数据映射、时间维、组织维和行业维。
+- 典型能力：`enterprise_name -> taxpayer_id`、行业代码到行业名称映射、税种标准名称归一。
+- 这类模型的职责是“解析与约束”，不是直接回答复杂分析结论。
+
+#### 2. 原子事实语义模型
+- 一张核心事实表对应一个原子语义模型。
+- 明确该事实的主粒度、核心实体键、时间键、基础指标、可过滤维度、默认口径和适用范围。
+- 原子语义模型是所有复合分析的证据基础，也是 SQL fallback 的最小受控单元。
+
+#### 3. 复合分析语义模型
+- 建立在原子事实模型和维度模型之上。
+- 允许多个物理表 join，也允许直接绑定治理后的分析宽表或主题结果表。
+- 典型主题：收入对账、税负偏离、风险预警、风险画像、风险成因诊断。
+- 每个复合模型都应声明其上游依赖、join 关系、适用场景和证据要求。
+
+### 语义模型注册与表达方式
+- `sys_semantic_model` 不应只充当“source_table + yaml_definition”的轻量注册表，而应成为语义目录入口。
+- 第一阶段可以继续复用 YAML 作为主配置载体，但 YAML 结构必须升级，至少覆盖：
+- `kind`: `entity_dimension | atomic_fact | composite_analysis`
+- `domain`: `vat | cit | invoice | risk | reconciliation | burden`
+- `grain`: 主粒度
+- `sources`: 参与的物理表或上游语义模型
+- `joins`: join 路径与键
+- `entities`: 主实体、解析器、显示名、过滤映射
+- `time`: 默认时间字段、支持粒度、期间展开规则
+- `dimensions`: 维度、别名、展示标签、可过滤性
+- `metrics`: 基础指标、派生指标、聚合方式、口径说明
+- `business_terms`: 业务术语、同义词、典型问法
+- `analysis_patterns`: 支持的分析任务，如 `lookup / comparison / warning / diagnosis`
+- `evidence_requirements`: 回答结论前必须获取的证据
+- `fallback_policy`: 无法直接回答时应回落到哪些原子模型或 SQL
+
+### 语义模型 YAML v2 示例
+
 ```yaml
-models:
-  - name: vat_declaration
-    label: "增值税申报数据"
-    table: tax_vat_declaration
-    dimensions:
-      - name: taxpayer_id / tax_period / enterprise_name / industry_code
-    metrics:
-      - name: total_sales_amount (SUM)
-      - name: output_tax (SUM)
-      - name: input_tax (SUM)
-      - name: tax_payable (derived: output - input)
-    joins:
-      - model: enterprise_info, on: taxpayer_id
+name: mart_tax_risk_alert
+label: 税务风险指标预警
+kind: composite_analysis
+domain: risk
+description: 面向企业风险预警查看与高风险指标汇总
+grain: indicator_period_enterprise
+sources:
+  - table: tax_risk_indicators
+    alias: risk
+  - model: dim_enterprise
+    alias: ent
+joins:
+  - left: risk.taxpayer_id
+    right: ent.taxpayer_id
+    type: left
+entities:
+  enterprise:
+    primary_key: taxpayer_id
+    display_field: enterprise_name
+    resolver:
+      model: dim_enterprise
+      input_fields: [enterprise_name, taxpayer_id]
+      output_field: taxpayer_id
+time:
+  default_field: risk.tax_period
+  supported_grains: [month, quarter, year]
+dimensions:
+  - name: enterprise_name
+    expr: ent.enterprise_name
+  - name: tax_period
+    expr: risk.tax_period
+  - name: indicator_name
+    expr: risk.indicator_name
+  - name: risk_level
+    expr: risk.risk_level
+metrics:
+  - name: indicator_value
+    expr: risk.indicator_value
+  - name: threshold_value
+    expr: risk.threshold_value
+  - name: warning_count
+    expr: COUNT(*)
+business_terms:
+  - 税务风险
+  - 风险预警
+  - 风险指标
+analysis_patterns:
+  - lookup
+  - warning
+  - diagnosis
+evidence_requirements:
+  - 风险指标值
+  - 阈值
+  - 风险等级
+  - 预警说明
+fallback_policy:
+  prefer_models: [mart_tax_risk_alert, fact_tax_risk_indicator]
+  allow_sql: true
 ```
 
-### 指标体系
-- **基础指标**: 销售额、销项税、进项税、营业收入、营业成本、净利润
-- **派生指标**: 增值税税负率、所得税有效税率、收入差异率、毛利率
-- **复合指标**: 税负偏离度、对账差异率、跨期调整金额
+### Agent 与语义层的关系
 
----
+#### 1. Semantic Asset Retrieval
+- 输入：用户问题、对话历史。
+- 输出：候选实体模型、候选原子事实模型、候选复合分析模型、可用实体解析器、相关时间粒度。
+- 要求：召回必须先区分“实体模型”“原子模型”“复合模型”，而不是把所有语义模型混成一个扁平候选列表。
 
-## 2026-03-30 设计升级：大模型智能理解层 + 语义模型中心化
+#### 2. Understanding Agent
+- 输入：用户问题、历史上下文、候选语义资产。
+- 输出：结构化 `understanding_result`。
+- 要求：理解层回答“用户要看什么业务对象、证据需要什么、优先走哪个主题语义模型”，而不是直接猜 SQL。
 
-### 背景与问题
-- 当前 `runtime_context.py` 主要依赖关键词匹配、正则提取和数据库元数据探测来识别问题类型、期间和候选资产。
-- 这种方式适合简单 metadata / fact query，但对真实业务里的口语化问法、复杂对比链路、多实体约束和跨口径分析不够稳定。
-- 当前 Agent 虽然已经接入 `semantic_query`，但语义模型更多只是 Executor 的可选工具，而不是 Planner 与 Executor 的共同业务契约。
-- 在复杂税账对账、差异诊断、风险归因等场景下，如果缺少“语义模型作为中心锚点”的理解与规划机制，准确率和可解释性都难以稳定。
+#### 3. Grounding Validator
+- 输入：`understanding_result`、语义目录、实体解析规则、可用 schema。
+- 输出：可执行的语义绑定结果、风险提示、缺失资产说明。
+- 要求：如果找不到对应语义模型，应明确说明“缺的是哪一类语义资产”，而不是直接退化成纯 SQL 路径。
 
-### 升级目标
-1. 将当前规则型 `runtime_context` 升级为“LLM 理解 + 语义 grounding + 规则校验”的混合智能理解层。
-2. 让语义模型从“可选查询工具”升级为“规划与执行的主锚点”。
-3. 让 Planner 规划的是“业务语义任务”，而不只是“去某张表查字段”。
-4. 让 Executor 默认走 `semantic_query`，仅在语义模型无法表达、需要明细穿透或做事实校验时回退到 `sql_executor`。
-5. 保留 Reviewer 的质量把关和 replan 机制，但把审查重点扩展到“语义口径是否一致、证据是否完整”。
+#### 4. Semantic-aware Planner
+- 输入：用户问题、`understanding_result`、grounding 结果。
+- 输出：带 `semantic_binding` 的 `plan_graph`。
+- 要求：业务问题的主节点应描述“绑定哪个语义模型并查询什么证据”，而不是优先描述“去哪张表查哪个键”。
 
-### 升级后的目标链路
+#### 5. Semantic-first Executor
+- 输入：plan node、`semantic_binding`、历史结果、grounding 结果。
+- 输出：语义查询结果、必要的穿透明细、校验结果。
+- 要求：实体解析优先通过实体语义模型或内建 resolver 完成；仅当语义层无法承载时才回退到显式 SQL。
+
+#### 6. Reviewer
+- 输入：节点结果、最终候选答案、语义绑定信息。
+- 输出：`approve / reject / replan`。
+- 要求：重点审查口径一致性、实体过滤是否正确、证据是否覆盖结论，而不只审查结果是否“看起来合理”。
+
+### 执行层与 SQL 的关系
+- 语义优先不等于“不执行 SQL”，而是“不让 SQL 成为业务理解和规划的主载体”。
+- Planner 阶段主要产出 `semantic_binding`，描述“绑定哪个语义模型、查询哪些维度与指标、需要哪些实体过滤”。
+- Executor 阶段优先调用 `semantic_query`，由语义编译器根据语义模型动态生成 SQL，再去数据库取数。
+- 当语义模型暂时无法表达某个场景时，Executor 才回退到 `sql_executor` 直接执行显式 SQL。
+- 因此，执行层最终通常仍会落到 SQL，只是 SQL 的来源应是“语义绑定 -> 语义编译 -> SQL”，而不是“用户问题 -> 直接拼 SQL”。
+- 推荐执行链路：
 
 ```
 用户问题
-  → Semantic Asset Retrieval（召回候选语义模型/指标/维度/实体锚点）
-  → Understanding Agent（大模型生成结构化业务理解）
-  → Grounding Validator（校验理解结果能否落到真实语义资产）
-  → Semantic-aware Planner（生成带 semantic_binding 的 plan_graph）
-  → Semantic-first Executor（优先 semantic_query，必要时 SQL 补充/验证）
-  → Reviewer（审查节点结果与最终结论）
+  → understanding_result
+  → semantic_binding
+  → semantic_query / semantic compiler
+  → compiled SQL
+  → database result
+  → reviewer
 ```
-
-### 新的职责边界
-
-#### 1. Semantic Asset Retrieval
-- 输入：用户问题、对话历史
-- 输出：候选语义模型、候选指标、候选维度、可用实体解析键、时间字段与粒度、候选 source_table
-- 说明：这一层不负责“理解问题”，只负责先把语义资产召回出来，避免 LLM 裸猜全库结构。
-
-#### 2. Understanding Agent
-- 输入：用户问题、对话历史、候选语义资产
-- 输出：结构化 `understanding_result`
-- 说明：这一层负责把自然语言问题理解成业务意图，而不是直接生成 plan。
-
-#### 3. Grounding Validator
-- 输入：`understanding_result`、语义模型目录、物理表 schema
-- 输出：可执行的 grounding 结果、风险提示、必要的补充约束
-- 说明：这一层校验“理解结果是否真的能落到已有语义资产上”，避免 Planner 按空想语义规划。
-
-#### 4. Semantic-aware Planner
-- 输入：用户问题、对话历史、`understanding_result`、grounding 结果
-- 输出：带 `semantic_binding` 的 `plan_graph`
-- 说明：Planner 默认围绕业务指标、维度、实体和对比关系来规划，而不是优先围绕物理表规划。
-
-#### 5. Semantic-first Executor
-- 输入：当前 plan node、`semantic_binding`、历史执行结果、grounding 结果
-- 输出：真实工具调用结果
-- 说明：优先 `semantic_query`，`sql_executor` 主要用于语义模型缺失、明细穿透、交叉核验和异常修复。
-
-#### 6. Reviewer
-- 输入：用户原始问题、当前节点结果、全局执行上下文
-- 输出：节点 verdict + 最终报告
-- 说明：除现有完整性/合理性审查外，还应审查语义口径一致性、对比对象是否完整、证据链是否闭环。
 
 ### UnderstandingResult 契约
 
-`Understanding Agent` 的目标产物不是自由文本，而是结构化对象。建议采用如下契约：
+`Understanding Agent` 的输出应从“候选模型列表”升级为“语义层分层绑定建议”，示例如下：
 
 ```json
 {
-  "query_mode": "metadata|fact_query|analysis|reconciliation|diagnosis",
-  "intent_summary": "一句话描述用户真实业务目标",
-  "business_goal": "要解释/比较/核验的业务对象",
+  "query_mode": "fact_query|analysis|reconciliation|diagnosis",
+  "intent_summary": "查看链龙商贸当前税务风险指标预警",
+  "business_goal": "定位企业税务风险预警指标及高风险项",
   "entities": {
-    "enterprise_name": ["华兴科技"],
-    "taxpayer_id": [],
-    "tax_types": ["增值税"],
-    "periods": ["2024-07", "2024-08", "2024-09"]
+    "enterprise_names": ["链龙商贸"],
+    "taxpayer_ids": [],
+    "periods": [],
+    "tax_types": []
   },
-  "dimensions": ["enterprise_name", "period"],
-  "metrics": ["vat_declared_revenue", "acct_book_revenue", "vat_vs_acct_diff"],
-  "comparisons": [
-    {
-      "left": "申报收入",
-      "right": "账面收入",
-      "operator": "diff"
-    }
-  ],
+  "semantic_scope": {
+    "entity_models": ["dim_enterprise"],
+    "atomic_models": ["fact_tax_risk_indicator"],
+    "composite_models": ["mart_tax_risk_alert"]
+  },
+  "dimensions": ["enterprise_name", "tax_period", "indicator_name", "risk_level"],
+  "metrics": ["indicator_value", "threshold_value", "warning_count"],
   "required_evidence": [
-    "申报口径收入",
-    "账面口径收入",
-    "差异金额",
-    "差异原因或桥接项"
+    "风险指标值",
+    "阈值",
+    "风险等级",
+    "预警说明"
   ],
-  "candidate_models": ["reconciliation_dashboard", "vat_declaration"],
+  "resolution_requirements": [
+    "将 enterprise_name 解析为 taxpayer_id"
+  ],
   "ambiguities": [],
   "confidence": "high"
 }
 ```
 
-### 语义模型升级方向
+#### UnderstandingResult 字段说明
 
-当前 `sys_semantic_model` + YAML 定义主要覆盖：
-- 模型名、标签、描述
-- source_table
-- dimensions / metrics
+| 字段 | 类型 | 中文含义 |
+|---|---|---|
+| `query_mode` | string | 当前问题的大类，如事实查询、分析、对账、诊断。 |
+| `intent_summary` | string | 用一句话概括系统理解到的真实业务意图。 |
+| `business_goal` | string | 本轮真正要回答的业务目标或要解决的问题。 |
+| `entities` | object | 从问题中识别出的业务实体集合。 |
+| `semantic_scope` | object | 该问题建议绑定的语义模型范围，按实体、原子事实、复合分析分层组织。 |
+| `dimensions` | string[] | 本轮问题涉及的分析维度或结果展示维度。 |
+| `metrics` | string[] | 本轮问题涉及的指标、数值字段或派生统计项。 |
+| `required_evidence` | string[] | 回答结论前必须拿到的证据清单。 |
+| `resolution_requirements` | string[] | 执行前必须完成的解析动作要求，例如企业名称转纳税人识别号。 |
+| `ambiguities` | string[] | 当前仍存在的歧义、缺失上下文或待确认点。 |
+| `confidence` | string | 理解层对本次结构化结果的置信度。 |
 
-这只能支持“查询”，不足以支撑“理解 + 规划”。升级后，语义模型需要额外承载：
-- 指标别名、业务同义词
-- 维度别名、常见问法
-- 默认时间字段、默认粒度、可支持粒度
-- 实体解析锚点，如 `enterprise_name -> taxpayer_id`
-- 常见分析模式，如“对账”“差异归因”“趋势”
-- 推荐可视化类型
-- 口径说明、适用边界、约束条件
-- 需要补充事实校验的场景
+#### `entities` 子字段说明
 
-建议优先把这些元信息先扩展进 YAML，而不是第一阶段就扩 DB 字段：
+| 字段 | 类型 | 中文含义 |
+|---|---|---|
+| `enterprise_names` | string[] | 识别出的企业名称或企业简称。 |
+| `taxpayer_ids` | string[] | 直接从问题中识别出的纳税人识别号。 |
+| `periods` | string[] | 识别出的期间、月份、季度或年度。 |
+| `tax_types` | string[] | 识别出的税种，如增值税、企业所得税等。 |
 
-```yaml
-name: reconciliation_dashboard
-label: 收入对账分析看板
-table: recon_revenue_comparison
-description: 用于税务申报收入与账面收入对比分析
-business_terms:
-  - 收入对账
-  - 税账差异
-  - 申报收入
-  - 账面收入
-intent_aliases:
-  - 比较申报收入和账面收入
-  - 分析收入差异
-entities:
-  enterprise:
-    id_field: taxpayer_id
-    name_field: enterprise_name
-time:
-  default_field: period
-  supported_grains: [month, quarter]
-analysis_patterns:
-  - compare
-  - reconciliation
-  - diagnosis
-dimensions:
-  - name: taxpayer_id
-    label: 纳税人识别号
-    column: taxpayer_id
-metrics:
-  - name: vat_declared_revenue
-    label: 增值税申报收入
-    column: vat_declared_revenue
-    agg: sum
-```
+#### `semantic_scope` 子字段说明
 
-### Plan 节点升级方向：引入 semantic_binding
+| 字段 | 类型 | 中文含义 |
+|---|---|---|
+| `entity_models` | string[] | 需要参与本轮解析或过滤的实体/维度语义模型。 |
+| `atomic_models` | string[] | 作为证据基础的原子事实语义模型。 |
+| `composite_models` | string[] | 优先用于回答本轮问题的复合分析语义模型。 |
 
-为让语义模型真正进入 Planner 与 Executor 的契约层，`plan_graph.nodes[]` 建议新增可选字段 `semantic_binding`：
+### Plan 节点升级方向：引入语义绑定而不是显式主数据 SQL
+
+`plan_graph.nodes[]` 的重点不是把实体解析暴露成主任务节点，而是声明本节点如何绑定语义模型、实体和证据：
 
 ```json
 {
-  "id": "n2",
-  "title": "查询 Q3 申报收入与账面收入",
+  "id": "n1",
+  "title": "查询企业税务风险指标预警",
   "kind": "query",
   "tool_hints": ["semantic_query", "sql_executor"],
   "semantic_binding": {
-    "models": ["reconciliation_dashboard"],
-    "metrics": ["vat_declared_revenue", "acct_book_revenue", "vat_vs_acct_diff"],
-    "dimensions": ["period", "enterprise_name"],
-    "filters": [
-      {"field": "taxpayer_id", "op": "=", "value": "xxx"},
-      {"field": "period", "op": "in", "value": ["2024-07", "2024-08", "2024-09"]}
-    ],
+    "entry_model": "mart_tax_risk_alert",
+    "supporting_models": ["dim_enterprise", "fact_tax_risk_indicator"],
+    "dimensions": ["enterprise_name", "tax_period", "indicator_name", "risk_level"],
+    "metrics": ["indicator_value", "threshold_value", "warning_count"],
+    "entity_filters": {
+      "enterprise_name": ["链龙商贸"]
+    },
+    "resolved_filters": {
+      "taxpayer_id": []
+    },
     "grain": "month",
-    "fallback_to_sql": true
+    "fallback_policy": "atomic_then_sql"
   }
 }
 ```
 
-该字段的作用：
-- Planner 显式声明本节点绑定的业务语义
-- Executor 不再只依赖自然语言节点标题猜工具
-- Reviewer 可以基于语义绑定检查“口径是否一致”
+该设计的含义：
+- 用户可见计划重点展示“本轮绑定了哪些语义模型”，而不是先展示一条企业匹配 SQL。
+- `entity_filters` 是业务输入，`resolved_filters` 是语义层内部解析后的执行过滤条件。
+- 若 `mart_tax_risk_alert` 不存在，可自动退到 `fact_tax_risk_indicator + dim_enterprise` 的组合执行，而不是直接裸查表。
+
+#### Plan Node 顶层字段说明
+
+| 字段 | 类型 | 中文含义 |
+|---|---|---|
+| `id` | string | 计划节点的唯一标识，用于 DAG 执行和状态跟踪。 |
+| `title` | string | 节点的人类可读标题，给用户和调试者看。 |
+| `kind` | string | 节点类型，如查询、分析、汇总、可视化等。 |
+| `tool_hints` | string[] | 对执行层的工具偏好提示，不是强制执行结果。 |
+| `semantic_binding` | object | 本节点绑定的语义模型、过滤条件、指标和执行策略，是执行层的核心契约。 |
+
+#### `semantic_binding` 字段说明
+
+| 字段 | 类型 | 中文含义 |
+|---|---|---|
+| `entry_model` | string | 本节点首选进入的主语义模型，也就是本轮查询优先从哪个主题模型执行。 |
+| `supporting_models` | string[] | 为主模型提供实体解析、补充事实、交叉校验或回退支撑的辅助语义模型。 |
+| `dimensions` | string[] | 通过语义层请求返回或聚合时使用的维度。 |
+| `metrics` | string[] | 通过语义层请求返回的指标、数值项或统计项。 |
+| `entity_filters` | object | 用户问题直接表达出来的业务过滤条件，仍保持业务语义，如企业名称。 |
+| `resolved_filters` | object | 经过实体解析、标准化或映射后得到的执行过滤条件，通常更贴近数据库键值，如 `taxpayer_id`。 |
+| `grain` | string | 本节点期望的时间或事实粒度，如月、季、年、指标粒度。 |
+| `fallback_policy` | string | 当主模型无法直接回答时，执行层应该如何回退，例如先退到原子事实模型，再退到 SQL。 |
+
+#### `entity_filters` / `resolved_filters` 对象说明
+
+| 字段 | 类型 | 中文含义 |
+|---|---|---|
+| `entity_filters.enterprise_name` | string[] | 用户直接提出的企业名称过滤条件，仍是业务语义表达。 |
+| `resolved_filters.taxpayer_id` | string[] | 经过实体解析后用于实际执行的纳税人识别号过滤条件。 |
+
+#### `semantic_binding` 里最容易混淆的字段
+
+| 字段 | 容易混淆点 | 正确认知 |
+|---|---|---|
+| `entry_model` | 容易被理解成“唯一会用到的模型” | 它是主入口模型，不代表执行时只能用这一个模型。 |
+| `supporting_models` | 容易被理解成“可有可无的备注” | 它表示执行时允许依赖的辅助语义模型，常用于实体解析、补证据、做校验。 |
+| `entity_filters` | 容易被理解成已经能直接下库查询 | 它是业务输入表达，还没经过实体解析或标准化。 |
+| `resolved_filters` | 容易被理解成用户原始输入 | 它是语义层内部解析后的执行条件，通常更接近真实数据库过滤键。 |
+| `tool_hints` | 容易被理解成 Executor 必须照做 | 它只是工具偏好，真正执行仍由语义绑定、节点类型和校验规则共同决定。 |
+
+### 问题示例：为什么“查看链龙商贸的税务风险指标预警”不应先出现企业匹配 SQL
+- 该问题的主语义主题是“风险预警”，主事实资产是 `tax_risk_indicators`，而不是 `enterprise_info`。
+- `enterprise_info` 在这里是实体解析依赖，不应成为用户视角的主任务。
+- 正确的语义链路应是：
+- 绑定 `dim_enterprise`
+- 绑定 `fact_tax_risk_indicator` 或 `mart_tax_risk_alert`
+- 在语义层内部完成 `enterprise_name -> taxpayer_id`
+- 返回风险指标、阈值、等级、预警说明
+
+### 2026-03-30 设计升级：大模型智能理解层 + 语义模型中心化
+
+### 升级目标
+1. 将当前规则型 `runtime_context` 升级为“LLM 理解 + 语义 grounding + 规则校验”的混合智能理解层。
+2. 让语义模型从“可选查询工具”升级为“规划与执行的主锚点”。
+3. 让 Planner 规划的是“业务语义任务”，而不是“物理表动作序列”。
+4. 让 Executor 默认走 `semantic_query`，仅在语义模型无法表达、需要明细穿透或做事实校验时回退到 `sql_executor`。
+5. 把实体解析、口径校验、证据要求纳入语义层契约，而不是散落在 prompt 或运行时 SQL 拼接里。
+
+### 升级后的目标链路
+
+```
+用户问题
+  → Semantic Asset Retrieval（按实体/原子/复合三个层次召回语义资产）
+  → Understanding Agent（大模型生成结构化业务理解）
+  → Grounding Validator（校验理解结果能否落到真实语义资产）
+  → Semantic-aware Planner（生成带语义绑定的 plan_graph）
+  → Semantic-first Executor（优先语义查询，必要时原子事实穿透或 SQL 校验）
+  → Reviewer（审查实体过滤、口径一致性与证据闭环）
+```
 
 ### 第一阶段落地边界
 
-为控制改造风险，第一阶段先做“骨架到位、接口成形、默认兼容”：
+为控制改造风险，第一阶段先完成“架构对齐”和“风险主题打通”：
 
-1. 新增 `understanding_agent.py` 与对应 prompt
-2. 在 `orchestrator.py` 中接入 `Understanding Agent`
-3. 将 `runtime_context.py` 升级为“grounding + validator”，可消费 `understanding_result`
-4. 扩展 Planner 输入，让其接收 `understanding_result`
-5. 扩展 `plan_graph` 节点结构，保留 `semantic_binding`
-6. 扩展 Executor 输入，让其能消费 `semantic_binding`
-7. 保留原有规则提取作为 fallback，不在第一阶段删除
+1. 保留已接入的 `understanding_agent.py` 与 `semantic_binding` 骨架。
+2. 将 `runtime_context.py` 从“规则猜测器”收缩为“grounding + validator”，弱化其对计划的主导权。
+3. 将语义目录按 `entity_dimension / atomic_fact / composite_analysis` 三类重新组织。
+4. 先补齐 `dim_enterprise`、`fact_tax_risk_indicator`、`mart_tax_risk_alert` 这一组风险主题语义模型。
+5. 扩展 `semantic_query` 编译器，支持多源 `sources + joins` 和实体解析下沉。
+6. 调整 Planner/Executor 校验规则，强制业务问题必须携带 `semantic_binding` 才能通过。
+7. 将“企业名称解析 taxpayer_id”改为语义层内部能力，不再默认暴露成用户可见 SQL 节点。
 
 ### 非第一阶段目标
-- 暂不在第一阶段修改前端交互形态
-- 暂不强制改造全部已有语义模型定义
-- 暂不引入新的数据库字段迁移
-- 暂不把 `sql_executor` 完全降级为禁用，只调整优先级与使用边界
+- 暂不在第一阶段重写全部前端交互。
+- 暂不一次性补齐全域所有语义模型，但必须先完成风险主题的标准样板。
+- 暂不在第一阶段废除 `sql_executor`，但明确其降级为 fallback。
+- 暂不在第一阶段追求所有复杂指标自动派生，先把实体、原子事实和复合主题三层打通。
 
 ---
 

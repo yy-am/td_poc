@@ -26,6 +26,10 @@ TOOL_CATALOG: dict[str, dict[str, str]] = {
         "label": "按语义模型取数",
         "summary": "通过语义模型把指标、维度和筛选条件编译成查询，减少手写 SQL。",
     },
+    "mql_query": {
+        "label": "按 TDA-MQL 取数",
+        "summary": "先生成受控的 TDA-MQL，再由语义引擎编译执行，适合指标语义明确的主路径查询。",
+    },
     "metadata_query": {
         "label": "查看表结构",
         "summary": "查看当前系统的表清单，或核对某张表的字段结构。",
@@ -267,6 +271,7 @@ def attach_plan_context(
             "semantic_domain": semantic_context.get("dataset_domain"),
             "semantic_subject": semantic_context.get("semantic_subject"),
             "semantic_mode": semantic_context.get("request_mode"),
+            "semantic_binding": {},
         }
 
     node = select_plan_node(plan_graph, plan_node_id)
@@ -279,6 +284,7 @@ def attach_plan_context(
         "semantic_domain": semantic_context.get("dataset_domain"),
         "semantic_subject": semantic_context.get("semantic_subject"),
         "semantic_mode": semantic_context.get("request_mode"),
+        "semantic_binding": normalize_semantic_binding((node or {}).get("semantic_binding")),
     }
 
 
@@ -350,7 +356,35 @@ def summarize_tool_input(tool_name: str, tool_args: dict[str, Any]) -> str:
     if tool_name == "semantic_query":
         model_name = tool_args.get("model_name") or "目标语义模型"
         metrics = ", ".join(tool_args.get("metrics") or []) or "指标"
-        return f"准备基于 `{model_name}` 提取 {metrics}。"
+        entity_filters = tool_args.get("entity_filters") or {}
+        resolved_filters = tool_args.get("resolved_filters") or {}
+        filter_bits: list[str] = []
+        if entity_filters:
+            filter_bits.append(f"业务过滤 {entity_filters}")
+        if resolved_filters:
+            filter_bits.append(f"已解析过滤 {resolved_filters}")
+        suffix = f"，{'; '.join(filter_bits)}" if filter_bits else ""
+        return f"准备基于 `{model_name}` 提取 {metrics}{suffix}。"
+
+    if tool_name == "mql_query":
+        model_name = tool_args.get("model_name") or "目标语义模型"
+        metrics = ", ".join(
+            str(item.get("metric") or "").strip()
+            for item in (tool_args.get("select") or [])
+            if isinstance(item, dict) and str(item.get("metric") or "").strip()
+        ) or "指标"
+        group_by = ", ".join(tool_args.get("group_by") or [])
+        entity_filters = tool_args.get("entity_filters") or {}
+        time_context = tool_args.get("time_context") or {}
+        summary_bits: list[str] = []
+        if group_by:
+            summary_bits.append(f"按 {group_by}")
+        if entity_filters:
+            summary_bits.append(f"实体过滤 {entity_filters}")
+        if time_context:
+            summary_bits.append(f"时间语义 {time_context}")
+        suffix = f"，{'；'.join(summary_bits)}" if summary_bits else ""
+        return f"准备基于 `{model_name}` 的 TDA-MQL 提取 {metrics}{suffix}。"
 
     if tool_name == "chart_generator":
         chart_type = tool_args.get("chart_type", "bar")
@@ -374,7 +408,7 @@ def summarize_tool_result(tool_name: str, result: Any) -> str:
         if result.get("columns") is not None:
             return f"已获取 `{result.get('table_name', '目标表')}` 的字段信息，共 {len(result.get('columns', []))} 个字段。"
 
-    if tool_name in {"sql_executor", "semantic_query"} and isinstance(result, dict):
+    if tool_name in {"sql_executor", "semantic_query", "mql_query"} and isinstance(result, dict):
         row_count = result.get("row_count", 0)
         if row_count == 0:
             return "查询已执行，但当前筛选条件下没有返回数据。"
@@ -598,11 +632,30 @@ def normalize_tool_hints(value: Any) -> list[str]:
     return hints
 
 
+def _normalize_filter_map(value: Any) -> dict[str, list[Any]]:
+    if not isinstance(value, dict):
+        return {}
+
+    normalized: dict[str, list[Any]] = {}
+    for raw_key, raw_value in value.items():
+        key = clean_text(str(raw_key or ""), max_len=60)
+        if not key:
+            continue
+        values = raw_value if isinstance(raw_value, list) else [raw_value]
+        items: list[Any] = []
+        for item in values:
+            if item is None or item in items:
+                continue
+            items.append(item)
+        if items:
+            normalized[key] = items[:12]
+    return normalized
+
+
 def normalize_semantic_binding(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict):
         return {}
 
-    models = [clean_text(str(item), max_len=60) for item in value.get("models", []) if str(item or "").strip()]
     metrics = [clean_text(str(item), max_len=60) for item in value.get("metrics", []) if str(item or "").strip()]
     dimensions = [clean_text(str(item), max_len=60) for item in value.get("dimensions", []) if str(item or "").strip()]
 
@@ -616,14 +669,98 @@ def normalize_semantic_binding(value: Any) -> dict[str, Any]:
             continue
         filters.append({"field": field, "op": op, "value": item.get("value")})
 
+    legacy_models = [clean_text(str(item), max_len=60) for item in value.get("models", []) if str(item or "").strip()]
+    entry_model = clean_text(str(value.get("entry_model") or ""), max_len=60)
+    supporting_models = [
+        clean_text(str(item), max_len=60)
+        for item in value.get("supporting_models", [])
+        if str(item or "").strip()
+    ]
+    if not entry_model and legacy_models:
+        entry_model = legacy_models[0]
+    if not supporting_models and len(legacy_models) > 1:
+        supporting_models = legacy_models[1:]
+
+    entity_filters = _normalize_filter_map(value.get("entity_filters"))
+    resolved_filters = _normalize_filter_map(value.get("resolved_filters"))
+
+    if not entity_filters and not resolved_filters:
+        for item in filters:
+            field = str(item.get("field") or "")
+            filter_value = item.get("value")
+            values = filter_value if isinstance(filter_value, list) else [filter_value]
+            values = [item for item in values if item is not None]
+            if not values:
+                continue
+            if field in {"enterprise_name", "enterprise_names"}:
+                entity_filters.setdefault("enterprise_name", [])
+                for raw in values:
+                    if raw not in entity_filters["enterprise_name"]:
+                        entity_filters["enterprise_name"].append(raw)
+            else:
+                resolved_filters.setdefault(field, [])
+                for raw in values:
+                    if raw not in resolved_filters[field]:
+                        resolved_filters[field].append(raw)
+
     grain = clean_text(str(value.get("grain") or ""), max_len=24)
+    query_language = clean_text(str(value.get("query_language") or ""), max_len=24)
+    fallback_policy = clean_text(str(value.get("fallback_policy") or ""), max_len=32)
+    if not fallback_policy:
+        fallback_policy = "atomic_then_sql" if bool(value.get("fallback_to_sql", True)) else "semantic_only"
+
+    time_context = value.get("time_context") if isinstance(value.get("time_context"), dict) else {}
+    analysis_mode = value.get("analysis_mode") if isinstance(value.get("analysis_mode"), dict) else {}
+    drilldown = value.get("drilldown") if isinstance(value.get("drilldown"), dict) else {}
+    compare: dict[str, Any] = {}
+    if time_context.get("compare"):
+        compare = {
+            "enabled": True,
+            "label": clean_text(str(time_context.get("compare") or ""), max_len=40),
+            "target": clean_text(str(time_context.get("range") or ""), max_len=40),
+            "metrics": metrics[:4],
+            "dimensions": dimensions[:4],
+        }
+    if drilldown.get("enabled"):
+        drilldown = {
+            "enabled": True,
+            "target": clean_text(str(drilldown.get("target") or ""), max_len=60),
+            "detail_fields": [
+                clean_text(str(item), max_len=60)
+                for item in (drilldown.get("detail_fields") or [])[:8]
+                if str(item or "").strip()
+            ],
+            "limit": drilldown.get("limit"),
+        }
+    analysis_mode_payload: dict[str, Any] = dict(analysis_mode)
+    if compare.get("enabled") and drilldown.get("enabled"):
+        analysis_mode_payload.setdefault("kind", "hybrid")
+        analysis_mode_payload.setdefault("label", "混合分析")
+    elif compare.get("enabled"):
+        analysis_mode_payload.setdefault("kind", "compare")
+        analysis_mode_payload.setdefault("label", "对比分析")
+    elif drilldown.get("enabled"):
+        analysis_mode_payload.setdefault("kind", "drilldown")
+        analysis_mode_payload.setdefault("label", "明细下钻")
+    else:
+        analysis_mode_payload.setdefault("kind", "analysis")
+        analysis_mode_payload.setdefault("label", "常规分析")
+
     return {
-        "models": models[:4],
+        "entry_model": entry_model,
+        "supporting_models": supporting_models[:6],
         "metrics": metrics[:8],
         "dimensions": dimensions[:8],
-        "filters": filters[:8],
+        "entity_filters": entity_filters,
+        "resolved_filters": resolved_filters,
         "grain": grain,
-        "fallback_to_sql": bool(value.get("fallback_to_sql", True)),
+        "query_language": query_language,
+        "time_context": time_context,
+        "analysis_mode": analysis_mode_payload,
+        "compare": compare,
+        "drilldown": drilldown,
+        "fallback_policy": fallback_policy,
+        "filters": filters[:8],
     }
 
 

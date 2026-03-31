@@ -1,0 +1,65 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg2" x1="120" y1="60" x2="1440" y2="860" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0E182A"/>
+      <stop offset="1" stop-color="#050B13"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" rx="36" fill="url(#bg2)"/>
+  <circle cx="1320" cy="120" r="180" fill="#6AC7FF" fill-opacity="0.08"/>
+
+  <rect x="40" y="40" width="1520" height="820" rx="30" fill="#08111E" fill-opacity="0.86" stroke="#26374F"/>
+  <text x="84" y="106" fill="#EAF2FD" font-size="44" font-weight="700" font-family="Segoe UI, Microsoft YaHei">V2 Swimlane Cinema / 执行泳道图</text>
+  <text x="84" y="146" fill="#90A6C0" font-size="20" font-family="Segoe UI, Microsoft YaHei">最适合表达“每个阶段到底在做什么”。每一列是一条职责泳道，右侧统一看节点详情。</text>
+
+  <rect x="80" y="196" width="300" height="600" rx="28" fill="#0D1A2C" stroke="#29405E"/>
+  <text x="112" y="236" fill="#67E3D1" font-size="18" font-family="Segoe UI, Microsoft YaHei">UNDERSTANDING</text>
+  <rect x="108" y="276" width="244" height="128" rx="24" fill="#12233A" stroke="#2E5D7A"/>
+  <text x="132" y="320" fill="#EEF5FF" font-size="28" font-weight="700" font-family="Segoe UI, Microsoft YaHei">语义召回</text>
+  <text x="132" y="356" fill="#8EA4BE" font-size="18" font-family="Segoe UI, Microsoft YaHei">entity / atomic / composite</text>
+  <rect x="108" y="428" width="244" height="128" rx="24" fill="#12233A" stroke="#2E5D7A"/>
+  <text x="132" y="472" fill="#EEF5FF" font-size="28" font-weight="700" font-family="Segoe UI, Microsoft YaHei">实体解析</text>
+  <text x="132" y="508" fill="#8EA4BE" font-size="18" font-family="Segoe UI, Microsoft YaHei">enterprise_name -&gt; taxpayer_id</text>
+
+  <rect x="404" y="196" width="300" height="600" rx="28" fill="#0D1A2C" stroke="#29405E"/>
+  <text x="436" y="236" fill="#6AC7FF" font-size="18" font-family="Segoe UI, Microsoft YaHei">PLANNER</text>
+  <rect x="432" y="276" width="244" height="128" rx="24" fill="#12233A" stroke="#2E5D7A"/>
+  <text x="456" y="320" fill="#EEF5FF" font-size="28" font-weight="700" font-family="Segoe UI, Microsoft YaHei">语义理解</text>
+  <text x="456" y="356" fill="#8EA4BE" font-size="18" font-family="Segoe UI, Microsoft YaHei">intent / evidence / scope</text>
+  <rect x="432" y="428" width="244" height="128" rx="24" fill="#12233A" stroke="#2E5D7A"/>
+  <text x="456" y="320" opacity="0">.</text>
+  <text x="456" y="472" fill="#EEF5FF" font-size="28" font-weight="700" font-family="Segoe UI, Microsoft YaHei">语义绑定计划</text>
+  <text x="456" y="508" fill="#8EA4BE" font-size="18" font-family="Segoe UI, Microsoft YaHei">entry_model / supporting_models</text>
+
+  <rect x="728" y="196" width="300" height="600" rx="28" fill="#0D1A2C" stroke="#29405E"/>
+  <text x="760" y="236" fill="#F6B562" font-size="18" font-family="Segoe UI, Microsoft YaHei">EXECUTOR</text>
+  <rect x="756" y="276" width="244" height="128" rx="24" fill="#12233A" stroke="#2E5D7A"/>
+  <text x="780" y="320" fill="#EEF5FF" font-size="28" font-weight="700" font-family="Segoe UI, Microsoft YaHei">编译查询</text>
+  <text x="780" y="356" fill="#8EA4BE" font-size="18" font-family="Segoe UI, Microsoft YaHei">semantic_query -&gt; SQL</text>
+  <rect x="756" y="428" width="244" height="128" rx="24" fill="#12233A" stroke="#2E5D7A"/>
+  <text x="780" y="472" fill="#EEF5FF" font-size="28" font-weight="700" font-family="Segoe UI, Microsoft YaHei">证据物化</text>
+  <text x="780" y="508" fill="#8EA4BE" font-size="18" font-family="Segoe UI, Microsoft YaHei">evidence cards / SQL preview</text>
+
+  <rect x="1052" y="196" width="240" height="600" rx="28" fill="#0D1A2C" stroke="#29405E"/>
+  <text x="1084" y="236" fill="#69D090" font-size="18" font-family="Segoe UI, Microsoft YaHei">REVIEW / ANSWER</text>
+  <rect x="1080" y="276" width="184" height="128" rx="24" fill="#12233A" stroke="#2E5D7A"/>
+  <text x="1104" y="320" fill="#EEF5FF" font-size="24" font-weight="700" font-family="Segoe UI, Microsoft YaHei">审查门禁</text>
+  <text x="1104" y="356" fill="#8EA4BE" font-size="17" font-family="Segoe UI, Microsoft YaHei">approve / reject / replan</text>
+  <rect x="1080" y="428" width="184" height="128" rx="24" fill="#12233A" stroke="#2E5D7A"/>
+  <text x="1104" y="472" fill="#EEF5FF" font-size="24" font-weight="700" font-family="Segoe UI, Microsoft YaHei">最终回答</text>
+  <text x="1104" y="508" fill="#8EA4BE" font-size="17" font-family="Segoe UI, Microsoft YaHei">结论 / 引用 / drilldown</text>
+
+  <rect x="1320" y="196" width="200" height="600" rx="28" fill="#0B1525" stroke="#26374F"/>
+  <text x="1350" y="236" fill="#8EA4BE" font-size="18" font-family="Segoe UI, Microsoft YaHei">INSPECTOR</text>
+  <text x="1350" y="292" fill="#EEF5FF" font-size="26" font-weight="700" font-family="Segoe UI, Microsoft YaHei">当前节点</text>
+  <text x="1350" y="328" fill="#F6B562" font-size="24" font-family="Segoe UI, Microsoft YaHei">编译查询</text>
+  <text x="1350" y="380" fill="#8EA4BE" font-size="16" font-family="Segoe UI, Microsoft YaHei">默认收起真实思考过程</text>
+  <text x="1350" y="408" fill="#DCEBFF" font-size="16" font-family="Segoe UI, Microsoft YaHei">展开可见 semantic binding、</text>
+  <text x="1350" y="434" fill="#DCEBFF" font-size="16" font-family="Segoe UI, Microsoft YaHei">tool、SQL、evidence。</text>
+
+  <path d="M352 340 L 432 340" stroke="#67E3D1" stroke-width="3" stroke-linecap="round"/>
+  <path d="M676 340 L 756 340" stroke="#6AC7FF" stroke-width="3" stroke-linecap="round"/>
+  <path d="M1000 340 L 1080 340" stroke="#F6B562" stroke-width="3" stroke-linecap="round"/>
+  <path d="M1000 492 L 1080 492" stroke="#F6B562" stroke-width="3" stroke-linecap="round"/>
+  <path d="M1264 340 L 1320 340" stroke="#69D090" stroke-width="3" stroke-linecap="round"/>
+</svg>

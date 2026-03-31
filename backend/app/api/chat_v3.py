@@ -6,6 +6,7 @@ import json
 from datetime import datetime
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 
 from app.agent.orchestrator import MultiAgentOrchestrator
@@ -127,7 +128,7 @@ async def chat_websocket_v3(websocket: WebSocket, session_id: str):
             final_event: dict[str, object] | None = None
 
             async for event in orchestrator.run(user_content):
-                payload = event.to_dict()
+                payload = jsonable_encoder(event.to_dict())
                 emitted_events.append(payload)
                 if event.is_final:
                     final_event = payload

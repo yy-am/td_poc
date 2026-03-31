@@ -1,0 +1,190 @@
+<svg width="1600" height="980" viewBox="0 0 1600 980" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="144" y1="60" x2="1480" y2="940" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1627"/>
+      <stop offset="1" stop-color="#040912"/>
+    </linearGradient>
+    <linearGradient id="line" x1="300" y1="0" x2="1210" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#64E5D6"/>
+      <stop offset="0.5" stop-color="#67C8FF"/>
+      <stop offset="1" stop-color="#F8C67A"/>
+    </linearGradient>
+    <linearGradient id="activeFill" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#1F324A"/>
+      <stop offset="1" stop-color="#122131"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#0A1220" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#09101A" stop-opacity="0.92"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="1600" height="980" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="28" stdDeviation="28" flood-color="#000000" flood-opacity="0.34"/>
+    </filter>
+    <filter id="glowBlue" x="-80" y="-80" width="300" height="300" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="26" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.42 0 1 0 0 0.78 0 0 1 0 1 0 0 0 0.55 0"/>
+    </filter>
+    <filter id="glowAmber" x="-80" y="-80" width="320" height="320" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="24" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.98 0 1 0 0 0.78 0 0 1 0 0.36 0 0 0 0.42 0"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="980" rx="38" fill="url(#bg)"/>
+  <circle cx="232" cy="154" r="168" fill="#67C8FF" fill-opacity="0.08"/>
+  <circle cx="1324" cy="148" r="176" fill="#60E3C8" fill-opacity="0.06"/>
+  <circle cx="866" cy="792" r="236" fill="#67C8FF" fill-opacity="0.05"/>
+
+  <rect x="28" y="28" width="1544" height="924" rx="30" fill="#08111B" fill-opacity="0.56" stroke="#1E3349"/>
+
+  <rect x="40" y="40" width="260" height="900" rx="28" fill="url(#panel)" stroke="#22364C"/>
+  <text x="72" y="90" fill="#78D8FF" font-size="18" font-family="Segoe UI, Microsoft YaHei" letter-spacing="2">EXECUTION STAGES</text>
+  <text x="72" y="138" fill="#F0F7FF" font-size="34" font-weight="700" font-family="Segoe UI, Microsoft YaHei">指挥舱原型</text>
+  <text x="72" y="172" fill="#8EA4BE" font-size="18" font-family="Segoe UI, Microsoft YaHei">去掉顶部说明区，只保留主图与节点审查。</text>
+
+  <rect x="68" y="228" width="204" height="104" rx="22" fill="#101D2E" stroke="#2A445E"/>
+  <text x="92" y="260" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">RUN</text>
+  <text x="92" y="298" fill="#F0F7FF" font-size="24" font-weight="700" font-family="Segoe UI, Microsoft YaHei">华兴科技 2024Q3</text>
+  <text x="92" y="324" fill="#64E5D6" font-size="16" font-family="Segoe UI, Microsoft YaHei">税账差异诊断</text>
+
+  <rect x="68" y="362" width="204" height="74" rx="18" fill="#13253C" stroke="#355176"/>
+  <text x="92" y="406" fill="#F0F7FF" font-size="21" font-family="Segoe UI, Microsoft YaHei">问题理解</text>
+  <rect x="236" y="386" width="18" height="18" rx="9" fill="#9BF0B8"/>
+  <text x="92" y="462" fill="#8EA4BE" font-size="15" font-family="Segoe UI, Microsoft YaHei">企业 / 期间 / 意图已锁定</text>
+
+  <rect x="68" y="486" width="204" height="74" rx="18" fill="#13253C" stroke="#355176"/>
+  <text x="92" y="530" fill="#F0F7FF" font-size="21" font-family="Segoe UI, Microsoft YaHei">语义绑定</text>
+  <rect x="236" y="510" width="18" height="18" rx="9" fill="#9BF0B8"/>
+  <text x="92" y="586" fill="#8EA4BE" font-size="15" font-family="Segoe UI, Microsoft YaHei">entry_model 已生成</text>
+
+  <rect x="68" y="610" width="204" height="74" rx="18" fill="#182A40" stroke="#5D5430"/>
+  <text x="92" y="654" fill="#F0F7FF" font-size="21" font-family="Segoe UI, Microsoft YaHei">证据执行</text>
+  <rect x="236" y="634" width="18" height="18" rx="9" fill="#F8C67A"/>
+  <text x="92" y="710" fill="#8EA4BE" font-size="15" font-family="Segoe UI, Microsoft YaHei">正在拆解差异构成</text>
+
+  <rect x="68" y="734" width="204" height="74" rx="18" fill="#13253C" stroke="#355176"/>
+  <text x="92" y="778" fill="#F0F7FF" font-size="21" font-family="Segoe UI, Microsoft YaHei">审查门禁</text>
+  <rect x="236" y="758" width="18" height="18" rx="9" fill="#5D7088"/>
+  <text x="92" y="834" fill="#8EA4BE" font-size="15" font-family="Segoe UI, Microsoft YaHei">等待 Reviewer</text>
+
+  <rect x="68" y="858" width="204" height="50" rx="16" fill="#0F1B2B" stroke="#273C54"/>
+  <text x="92" y="890" fill="#F0F7FF" font-size="17" font-family="Segoe UI, Microsoft YaHei">节点 8  ·  Tool 3  ·  SQL 2</text>
+
+  <rect x="324" y="40" width="904" height="900" rx="30" fill="url(#panel)" stroke="#22364C" filter="url(#shadow)"/>
+  <text x="364" y="92" fill="#F2F8FF" font-size="34" font-weight="700" font-family="Segoe UI, Microsoft YaHei">Orbit Command Deck / 执行指挥图</text>
+  <text x="364" y="126" fill="#8EA4BE" font-size="18" font-family="Segoe UI, Microsoft YaHei">主图不是说明板，而是工作台。节点可点开，路径可追踪，结论可回链。</text>
+
+  <rect x="366" y="164" width="154" height="42" rx="20" fill="#102235" stroke="#28435D"/>
+  <text x="392" y="191" fill="#78D8FF" font-size="15" font-family="Segoe UI, Microsoft YaHei">Question Locked</text>
+  <rect x="534" y="164" width="166" height="42" rx="20" fill="#102235" stroke="#28435D"/>
+  <text x="560" y="191" fill="#64E5D6" font-size="15" font-family="Segoe UI, Microsoft YaHei">Semantic First</text>
+  <rect x="714" y="164" width="172" height="42" rx="20" fill="#102235" stroke="#28435D"/>
+  <text x="740" y="191" fill="#F8C67A" font-size="15" font-family="Segoe UI, Microsoft YaHei">SQL As Drilldown</text>
+
+  <g opacity="0.95">
+    <path d="M502 470 C 618 470, 660 470, 770 470" stroke="url(#line)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M846 470 C 950 470, 986 430, 1068 350" stroke="url(#line)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M846 470 C 962 470, 1006 544, 1082 642" stroke="url(#line)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M1110 350 C 1170 350, 1178 430, 1160 502" stroke="#66D3FF" stroke-opacity="0.38" stroke-width="3" stroke-linecap="round"/>
+    <path d="M776 472 C 694 590, 694 708, 804 790" stroke="#67C8FF" stroke-opacity="0.28" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <circle cx="782" cy="500" r="186" fill="#112439"/>
+  <circle cx="782" cy="500" r="184" stroke="#223C58"/>
+  <circle cx="782" cy="500" r="112" fill="#0B1524" stroke="#1F344A"/>
+  <circle cx="782" cy="500" r="54" fill="#12263C" stroke="#2E5374"/>
+  <text x="742" y="486" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">CURRENT</text>
+  <text x="700" y="520" fill="#F5FAFF" font-size="28" font-weight="700" font-family="Segoe UI, Microsoft YaHei">差异构成分析</text>
+  <text x="728" y="548" fill="#F8C67A" font-size="16" font-family="Segoe UI, Microsoft YaHei">Executor · Active</text>
+
+  <g filter="url(#glowBlue)">
+    <circle cx="444" cy="358" r="56" fill="#67C8FF" fill-opacity="0.26"/>
+  </g>
+  <rect x="384" y="306" width="196" height="108" rx="22" fill="#122338" stroke="#2E5374"/>
+  <text x="408" y="338" fill="#8EA4BE" font-size="13" font-family="Segoe UI, Microsoft YaHei">01 · UNDERSTANDING</text>
+  <text x="408" y="374" fill="#F0F7FF" font-size="25" font-weight="700" font-family="Segoe UI, Microsoft YaHei">识别问题目标</text>
+  <text x="408" y="404" fill="#8EA4BE" font-size="17" font-family="Segoe UI, Microsoft YaHei">税账对账 / 华兴科技 / Q3</text>
+  <rect x="522" y="322" width="42" height="20" rx="10" fill="#1F5A4B"/>
+  <text x="531" y="337" fill="#B7FFD2" font-size="11" font-family="Segoe UI, Microsoft YaHei">DONE</text>
+
+  <rect x="402" y="620" width="184" height="104" rx="22" fill="#122338" stroke="#2E5374"/>
+  <text x="426" y="652" fill="#8EA4BE" font-size="13" font-family="Segoe UI, Microsoft YaHei">01B · RESOLVER</text>
+  <text x="426" y="688" fill="#F0F7FF" font-size="25" font-weight="700" font-family="Segoe UI, Microsoft YaHei">实体期间解析</text>
+  <text x="426" y="716" fill="#8EA4BE" font-size="17" font-family="Segoe UI, Microsoft YaHei">taxpayer_id / month range</text>
+  <rect x="532" y="636" width="42" height="20" rx="10" fill="#1F5A4B"/>
+  <text x="541" y="651" fill="#B7FFD2" font-size="11" font-family="Segoe UI, Microsoft YaHei">DONE</text>
+
+  <rect x="700" y="286" width="202" height="112" rx="22" fill="#13263D" stroke="#2E5374"/>
+  <text x="724" y="318" fill="#8EA4BE" font-size="13" font-family="Segoe UI, Microsoft YaHei">02 · PLANNER</text>
+  <text x="724" y="354" fill="#F0F7FF" font-size="25" font-weight="700" font-family="Segoe UI, Microsoft YaHei">绑定语义模型</text>
+  <text x="724" y="384" fill="#8EA4BE" font-size="17" font-family="Segoe UI, Microsoft YaHei">entry + supporting models</text>
+  <rect x="844" y="302" width="42" height="20" rx="10" fill="#1F5A4B"/>
+  <text x="853" y="317" fill="#B7FFD2" font-size="11" font-family="Segoe UI, Microsoft YaHei">DONE</text>
+
+  <rect x="1000" y="294" width="214" height="114" rx="22" fill="#13263D" stroke="#2E5374"/>
+  <text x="1024" y="326" fill="#8EA4BE" font-size="13" font-family="Segoe UI, Microsoft YaHei">03 · EXECUTOR</text>
+  <text x="1024" y="362" fill="#F0F7FF" font-size="25" font-weight="700" font-family="Segoe UI, Microsoft YaHei">提取 Q3 差异事实</text>
+  <text x="1024" y="392" fill="#8EA4BE" font-size="17" font-family="Segoe UI, Microsoft YaHei">semantic_query / 3 rows</text>
+  <rect x="1156" y="310" width="42" height="20" rx="10" fill="#1F5A4B"/>
+  <text x="1165" y="325" fill="#B7FFD2" font-size="11" font-family="Segoe UI, Microsoft YaHei">DONE</text>
+
+  <g filter="url(#glowAmber)">
+    <circle cx="1110" cy="642" r="70" fill="#F8C67A" fill-opacity="0.28"/>
+  </g>
+  <rect x="994" y="586" width="232" height="124" rx="24" fill="url(#activeFill)" stroke="#8C7442"/>
+  <text x="1018" y="620" fill="#E3C48A" font-size="13" font-family="Segoe UI, Microsoft YaHei">04 · ACTIVE NODE</text>
+  <text x="1018" y="660" fill="#F6FBFF" font-size="28" font-weight="700" font-family="Segoe UI, Microsoft YaHei">拆解差异构成</text>
+  <text x="1018" y="692" fill="#AABDD3" font-size="18" font-family="Segoe UI, Microsoft YaHei">时间性差异 / 口径差异 / 其他调整</text>
+  <rect x="1158" y="604" width="50" height="22" rx="11" fill="#5A4520"/>
+  <text x="1168" y="620" fill="#FFE7B9" font-size="11" font-family="Segoe UI, Microsoft YaHei">ACTIVE</text>
+
+  <rect x="950" y="770" width="208" height="108" rx="22" fill="#13263D" stroke="#2E5374"/>
+  <text x="974" y="802" fill="#8EA4BE" font-size="13" font-family="Segoe UI, Microsoft YaHei">05 · SQL AUDIT</text>
+  <text x="974" y="838" fill="#F0F7FF" font-size="24" font-weight="700" font-family="Segoe UI, Microsoft YaHei">明细 SQL 校验</text>
+  <text x="974" y="866" fill="#8EA4BE" font-size="16" font-family="Segoe UI, Microsoft YaHei">仅在需要时穿透</text>
+
+  <rect x="1268" y="448" width="194" height="106" rx="22" fill="#13263D" stroke="#2E5374"/>
+  <text x="1292" y="480" fill="#8EA4BE" font-size="13" font-family="Segoe UI, Microsoft YaHei">06 · REVIEWER</text>
+  <text x="1292" y="516" fill="#F0F7FF" font-size="24" font-weight="700" font-family="Segoe UI, Microsoft YaHei">Reviewer 审查</text>
+  <text x="1292" y="544" fill="#8EA4BE" font-size="16" font-family="Segoe UI, Microsoft YaHei">approve / reject / replan</text>
+
+  <rect x="1260" y="646" width="202" height="110" rx="22" fill="#13263D" stroke="#2E5374"/>
+  <text x="1284" y="678" fill="#8EA4BE" font-size="13" font-family="Segoe UI, Microsoft YaHei">07 · DELIVERY</text>
+  <text x="1284" y="714" fill="#F0F7FF" font-size="24" font-weight="700" font-family="Segoe UI, Microsoft YaHei">最终报告回链</text>
+  <text x="1284" y="742" fill="#8EA4BE" font-size="16" font-family="Segoe UI, Microsoft YaHei">结论可反查到节点</text>
+
+  <rect x="1244" y="40" width="316" height="900" rx="30" fill="url(#panel)" stroke="#22364C"/>
+  <text x="1278" y="90" fill="#8EA4BE" font-size="16" font-family="Segoe UI, Microsoft YaHei" letter-spacing="1.5">NODE INSPECTOR</text>
+  <text x="1278" y="138" fill="#F4F9FF" font-size="32" font-weight="700" font-family="Segoe UI, Microsoft YaHei">拆解差异构成</text>
+  <text x="1278" y="170" fill="#F8C67A" font-size="17" font-family="Segoe UI, Microsoft YaHei">Executor · Active · 16.8s</text>
+
+  <rect x="1278" y="208" width="248" height="50" rx="18" fill="#102235" stroke="#28435D"/>
+  <text x="1300" y="239" fill="#F3F9FF" font-size="18" font-family="Segoe UI, Microsoft YaHei">思路摘要（默认收起）</text>
+
+  <rect x="1278" y="284" width="248" height="124" rx="20" fill="#101D2E" stroke="#2A445E"/>
+  <text x="1302" y="316" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">SEMANTIC BINDING</text>
+  <text x="1302" y="348" fill="#F3F9FF" font-size="16" font-family="Segoe UI, Microsoft YaHei">entry_model</text>
+  <text x="1420" y="348" fill="#64E5D6" font-size="16" font-family="Segoe UI, Microsoft YaHei">mart_adjustment_tracking</text>
+  <text x="1302" y="376" fill="#F3F9FF" font-size="16" font-family="Segoe UI, Microsoft YaHei">support</text>
+  <text x="1420" y="376" fill="#64E5D6" font-size="16" font-family="Segoe UI, Microsoft YaHei">fact_vat_declaration</text>
+  <text x="1302" y="404" fill="#F3F9FF" font-size="16" font-family="Segoe UI, Microsoft YaHei">grain</text>
+  <text x="1420" y="404" fill="#64E5D6" font-size="16" font-family="Segoe UI, Microsoft YaHei">month in quarter</text>
+
+  <rect x="1278" y="436" width="248" height="102" rx="20" fill="#101D2E" stroke="#2A445E"/>
+  <text x="1302" y="468" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">TOOL</text>
+  <text x="1302" y="504" fill="#F3F9FF" font-size="24" font-weight="700" font-family="Segoe UI, Microsoft YaHei">semantic_query</text>
+  <text x="1302" y="528" fill="#8EA4BE" font-size="15" font-family="Segoe UI, Microsoft YaHei">group_by source_category · sort by difference</text>
+
+  <rect x="1278" y="566" width="248" height="160" rx="20" fill="#08111A" stroke="#244455"/>
+  <text x="1302" y="598" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">SQL</text>
+  <text x="1302" y="632" fill="#95F7D8" font-size="15" font-family="Consolas, monospace">SELECT source_category,</text>
+  <text x="1302" y="656" fill="#95F7D8" font-size="15" font-family="Consolas, monospace">       SUM(difference)</text>
+  <text x="1302" y="680" fill="#95F7D8" font-size="15" font-family="Consolas, monospace">FROM recon_adjustment_tracking</text>
+  <text x="1302" y="704" fill="#95F7D8" font-size="15" font-family="Consolas, monospace">WHERE taxpayer_id = ...</text>
+
+  <rect x="1278" y="754" width="248" height="150" rx="20" fill="#101D2E" stroke="#2A445E"/>
+  <text x="1302" y="786" fill="#8EA4BE" font-size="14" font-family="Segoe UI, Microsoft YaHei">RESULT / REVIEW</text>
+  <text x="1302" y="818" fill="#F3F9FF" font-size="16" font-family="Segoe UI, Microsoft YaHei">时间性差异      401,228.11</text>
+  <text x="1302" y="846" fill="#F3F9FF" font-size="16" font-family="Segoe UI, Microsoft YaHei">口径差异        102,890.36</text>
+  <text x="1302" y="874" fill="#F8C67A" font-size="15" font-family="Segoe UI, Microsoft YaHei">Reviewer 建议：补一次 SQL audit</text>
+</svg>

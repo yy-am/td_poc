@@ -95,6 +95,7 @@ async def _run_planner(llm: Any, payload: dict[str, Any], user_query: str) -> di
                     {"role": "system", "content": PLANNER_SYSTEM_PROMPT},
                     {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
                 ],
+                trace={"agent": "planner", "operation": "legacy_plan_generate", "mode": payload.get("mode")},
                 stream=False,
                 temperature=0.0,
                 max_tokens=900,

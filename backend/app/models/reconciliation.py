@@ -1,5 +1,5 @@
-"""对账分析数据模型 — 4张表"""
-from sqlalchemy import String, Integer, Numeric, Text, ForeignKey
+"""对账分析数据模型 — 7张表"""
+from sqlalchemy import String, Integer, Numeric, Text, ForeignKey, Date, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base, TimestampMixin
 
@@ -66,3 +66,95 @@ class ReconCrossCheckResult(Base):
     difference: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="差异")
     status: Mapped[str] = mapped_column(String(10), nullable=False, comment="结果: 通过/预警/异常")
     recommendation: Mapped[str] = mapped_column(Text, nullable=True, comment="建议")
+
+
+class ReconExportBookRevenueLine(Base, TimestampMixin):
+    """出口退税账面收入明细"""
+    __tablename__ = "recon_export_book_revenue_line"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    taxpayer_id: Mapped[str] = mapped_column(String(20), ForeignKey("enterprise_info.taxpayer_id"), nullable=False)
+    book_period: Mapped[str] = mapped_column(String(7), nullable=False, comment="账面期间 YYYY-MM")
+    recognition_date: Mapped[str] = mapped_column(Date, nullable=False, comment="收入确认日期")
+    contract_id: Mapped[str] = mapped_column(String(40), nullable=False, comment="合同号")
+    contract_line_id: Mapped[str] = mapped_column(String(50), nullable=False, comment="合同明细行号")
+    customer_name: Mapped[str] = mapped_column(String(120), nullable=False, comment="客户名称")
+    product_name: Mapped[str] = mapped_column(String(120), nullable=False, comment="产品名称")
+    shipment_no: Mapped[str] = mapped_column(String(40), nullable=True, comment="发运单号")
+    declaration_no: Mapped[str] = mapped_column(String(40), nullable=True, comment="报关单号")
+    declaration_line_no: Mapped[int] = mapped_column(Integer, nullable=True, comment="报关单行号")
+    sales_invoice_no: Mapped[str] = mapped_column(String(40), nullable=True, comment="销售发票号")
+    voucher_no: Mapped[str] = mapped_column(String(40), nullable=True, comment="凭证号")
+    currency_code: Mapped[str] = mapped_column(String(10), default="USD", comment="币种")
+    fx_rate_book: Mapped[float] = mapped_column(Numeric(12, 6), default=0, comment="账面汇率")
+    gross_revenue_amount_doc: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="原币毛收入")
+    gross_revenue_amount_cny: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="毛收入人民币")
+    freight_amount_cny: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="运费人民币")
+    insurance_amount_cny: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="保费人民币")
+    commission_amount_cny: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="佣金人民币")
+    other_non_basis_exclusion_amount_cny: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="其他非税基剔除额")
+    book_non_basis_exclusion_amount_cny: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="账面非税基剔除额")
+    book_net_revenue_before_discount_cny: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="折扣前账面可比收入")
+    source_system: Mapped[str] = mapped_column(String(30), default="ERP", comment="来源系统")
+    doc_status: Mapped[str] = mapped_column(String(20), default="已入账", comment="单据状态")
+
+
+class ReconExportRefundTaxBasisLine(Base, TimestampMixin):
+    """出口退税税基明细"""
+    __tablename__ = "recon_export_refund_tax_basis_line"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    taxpayer_id: Mapped[str] = mapped_column(String(20), ForeignKey("enterprise_info.taxpayer_id"), nullable=False)
+    rebate_period: Mapped[str] = mapped_column(String(7), nullable=False, comment="退税所属期 YYYY-MM")
+    export_date: Mapped[str] = mapped_column(Date, nullable=False, comment="出口日期")
+    contract_id: Mapped[str] = mapped_column(String(40), nullable=False, comment="合同号")
+    contract_line_id: Mapped[str] = mapped_column(String(50), nullable=False, comment="合同明细行号")
+    customer_name: Mapped[str] = mapped_column(String(120), nullable=False, comment="客户名称")
+    product_name: Mapped[str] = mapped_column(String(120), nullable=False, comment="产品名称")
+    declaration_no: Mapped[str] = mapped_column(String(40), nullable=False, comment="报关单号")
+    declaration_line_no: Mapped[int] = mapped_column(Integer, nullable=False, comment="报关单行号")
+    sales_invoice_no: Mapped[str] = mapped_column(String(40), nullable=True, comment="销售发票号")
+    currency_code: Mapped[str] = mapped_column(String(10), default="USD", comment="币种")
+    fx_rate_customs: Mapped[float] = mapped_column(Numeric(12, 6), default=0, comment="海关汇率")
+    customs_fob_amount_doc: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="报关FOB原币金额")
+    customs_fob_amount_cny: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="报关FOB人民币金额")
+    rebate_tax_basis_amount_cny: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="退税税基金额")
+    non_refundable_amount_cny: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="不可退税金额")
+    rebate_rate: Mapped[float] = mapped_column(Numeric(8, 4), default=0, comment="退税率")
+    rebate_tax_amount_cny: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="应退税额")
+    rebate_batch_no: Mapped[str] = mapped_column(String(40), nullable=True, comment="退税申报批次号")
+    source_system: Mapped[str] = mapped_column(String(30), default="关务/退税系统", comment="来源系统")
+    doc_status: Mapped[str] = mapped_column(String(20), default="已申报", comment="单据状态")
+
+
+class ReconExportContractDiscountLine(Base, TimestampMixin):
+    """出口合同折扣 / 折让 / 返利明细"""
+    __tablename__ = "recon_export_contract_discount_line"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    taxpayer_id: Mapped[str] = mapped_column(String(20), ForeignKey("enterprise_info.taxpayer_id"), nullable=False)
+    contract_id: Mapped[str] = mapped_column(String(40), nullable=False, comment="合同号")
+    contract_line_id: Mapped[str] = mapped_column(String(50), nullable=False, comment="合同明细行号")
+    discount_doc_no: Mapped[str] = mapped_column(String(40), nullable=False, comment="折扣单据号")
+    discount_type_code: Mapped[str] = mapped_column(String(20), nullable=False, comment="折扣类型编码")
+    discount_type_name: Mapped[str] = mapped_column(String(60), nullable=False, comment="折扣类型名称")
+    discount_reason: Mapped[str] = mapped_column(Text, nullable=True, comment="折扣原因")
+    book_period: Mapped[str] = mapped_column(String(7), nullable=False, comment="账面期间 YYYY-MM")
+    rebate_period: Mapped[str] = mapped_column(String(7), nullable=True, comment="税基传递期间 YYYY-MM")
+    effective_date: Mapped[str] = mapped_column(Date, nullable=False, comment="折扣生效日期")
+    related_declaration_no: Mapped[str] = mapped_column(String(40), nullable=True, comment="关联报关单号")
+    related_declaration_line_no: Mapped[int] = mapped_column(Integer, nullable=True, comment="关联报关单行号")
+    related_invoice_no: Mapped[str] = mapped_column(String(40), nullable=True, comment="关联发票号")
+    currency_code: Mapped[str] = mapped_column(String(10), default="USD", comment="币种")
+    fx_rate_discount: Mapped[float] = mapped_column(Numeric(12, 6), default=0, comment="折扣汇率")
+    discount_amount_doc: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="原币折扣金额")
+    discount_amount_cny: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="人民币折扣金额")
+    book_side_discount_amount_cny: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="账面侧折扣金额")
+    tax_side_discount_amount_cny: Mapped[float] = mapped_column(Numeric(18, 2), default=0, comment="税基侧折扣金额")
+    affect_book_revenue_flag: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否影响账面收入")
+    affect_tax_basis_flag: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否影响税基")
+    allocation_method: Mapped[str] = mapped_column(String(40), default="按合同明细行", comment="分摊方式")
+    allocation_scope: Mapped[str] = mapped_column(String(40), default="合同明细行", comment="分摊范围")
+    sync_status: Mapped[str] = mapped_column(String(20), default="仅账面已处理", comment="同步状态")
+    source_system: Mapped[str] = mapped_column(String(30), default="合同管理系统", comment="来源系统")
+    doc_status: Mapped[str] = mapped_column(String(20), default="已审批", comment="单据状态")
